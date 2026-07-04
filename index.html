@@ -1,0 +1,4251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="theme-color" content="#04162b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Fish-Agent" />
+<meta name="description" content="Fish-Agent — 上传鱼眼照片，AI 秒级分析水产品新鲜度" />
+<title>Fish-Agent · 水产品新鲜度智能评估</title>
+<style>
+  /* ============ 设计系统 ============ */
+  :root {
+    --abyss: #04162b;
+    --deep: #062a4d;
+    --ocean: #0a4d7a;
+    --sea: #1185b8;
+    --aqua: #27d0c4;
+    --foam: #eaf6fb;
+    --white: #ffffff;
+    --fresh: #27d0c4;
+    --mid: #f5b54a;
+    --bad: #ef5b5b;
+    --ink: #0b2238;
+    --muted: #9bb4cc;
+    --card: rgba(255, 255, 255, .06);
+    --card-hover: rgba(255, 255, 255, .09);
+    --border: rgba(255, 255, 255, .12);
+    --border-hover: rgba(39, 208, 196, .4);
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    --font-stack: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    --transition: 0.3s ease;
+
+    --navbar-h: 64px;
+  }
+
+  /* ============ 基础重置 ============ */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-stack);
+    font-size: clamp(15px, 1vw + 0.7rem, 16px);
+    font-weight: 400;
+    line-height: 1.65;
+    color: var(--foam);
+    background: var(--abyss);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ============ 深海背景 ============ */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(39, 208, 196, 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 20%, rgba(17, 133, 184, 0.22), transparent 65%),
+      radial-gradient(ellipse 70% 60% at 20% 80%, rgba(10, 77, 122, 0.4), transparent 70%),
+      linear-gradient(180deg, var(--abyss) 0%, var(--deep) 45%, var(--ink) 100%);
+  }
+  /* 底部波浪纹理 */
+  body::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 220px;
+    z-index: -1;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 220' preserveAspectRatio='none'><path d='M0,120 C240,200 480,40 720,100 C960,160 1200,60 1440,120 L1440,220 L0,220 Z' fill='%2304162b' fill-opacity='0.55'/><path d='M0,150 C240,90 480,210 720,140 C960,70 1200,180 1440,130 L1440,220 L0,220 Z' fill='%2302799a' fill-opacity='0.18'/></svg>");
+    background-size: cover;
+    background-position: bottom;
+    pointer-events: none;
+  }
+
+  img { max-width: 100%; display: block; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+  /* ============ 导航栏 ============ */
+  .navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--navbar-h);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(16px, 4vw, 40px);
+    background: rgba(4, 22, 43, 0.55);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: var(--space-3); }
+  .brand-logo {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--aqua) 0%, var(--sea) 100%);
+    box-shadow: 0 4px 14px rgba(39, 208, 196, 0.35);
+    letter-spacing: -0.5px;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-title { font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: 0.2px; }
+  .brand-sub { font-size: 11.5px; color: var(--muted); letter-spacing: 0.3px; }
+
+  .nav-links { display: flex; gap: var(--space-5); align-items: center; }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 4px;
+    position: relative;
+    transition: color var(--transition);
+  }
+  .nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: 2px;
+    width: 0; height: 2px;
+    background: var(--aqua);
+    transition: width var(--transition);
+    border-radius: 2px;
+  }
+  .nav-links a:hover { color: var(--foam); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ============ 主容器 ============ */
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: calc(var(--navbar-h) + var(--space-7)) clamp(16px, 4vw, 32px) var(--space-8);
+  }
+
+  section { margin-bottom: var(--space-7); }
+
+  /* ============ Hero ============ */
+  .hero {
+    text-align: center;
+    padding: var(--space-5) 0 var(--space-3);
+    animation: fadeUp 0.9s ease both;
+  }
+  .hero-title {
+    font-size: clamp(40px, 8vw, 72px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin: 0 0 var(--space-3);
+    background: linear-gradient(135deg, #ffffff 0%, var(--aqua) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .hero-tagline {
+    font-size: clamp(18px, 2.5vw, 22px);
+    font-weight: 600;
+    color: var(--foam);
+    margin: 0 0 var(--space-3);
+    letter-spacing: 2px;
+  }
+  .hero-desc {
+    font-size: 15px;
+    color: var(--muted);
+    margin: 0 auto var(--space-6);
+    max-width: 540px;
+  }
+  .hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--foam);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+  }
+  .badge:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    background: var(--card-hover);
+  }
+  .badge-icon { font-size: 15px; }
+  .badge-num {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--aqua);
+  }
+
+  /* ============ 区块标题 ============ */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: "";
+    width: 4px; height: 18px;
+    background: linear-gradient(180deg, var(--aqua), var(--sea));
+    border-radius: 2px;
+  }
+  .section-hint {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ============ 上传区域 ============ */
+  .upload-zone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: clamp(32px, 6vw, 56px) var(--space-5);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition);
+    outline: none;
+    min-height: 240px;
+  }
+  .upload-zone:hover,
+  .upload-zone:focus-visible {
+    border-color: var(--aqua);
+    background: var(--card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(39, 208, 196, 0.12);
+  }
+  .upload-zone.is-dragover {
+    border-style: solid;
+    border-color: var(--aqua);
+    border-width: 3px;
+    background: rgba(39, 208, 196, 0.1);
+    transform: scale(1.01);
+    box-shadow: 0 0 0 6px rgba(39, 208, 196, 0.12), 0 16px 50px rgba(39, 208, 196, 0.2);
+  }
+  .upload-icon {
+    width: 72px; height: 72px;
+    margin-bottom: var(--space-4);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 30% 30%, rgba(39, 208, 196, 0.25), rgba(17, 133, 184, 0.15));
+    border: 1px solid var(--border-hover);
+    position: relative;
+  }
+  .upload-icon::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(39, 208, 196, 0.2);
+    animation: pulse 2.6s ease-in-out infinite;
+  }
+  /* CSS 绘制的鱼图标 */
+  .fish-icon {
+    width: 38px; height: 24px;
+    position: relative;
+  }
+  .fish-icon::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 4px;
+    width: 26px; height: 16px;
+    background: linear-gradient(135deg, var(--aqua), var(--sea));
+    border-radius: 50% 60% 60% 50% / 50% 50% 50% 50%;
+  }
+  .fish-icon::after {
+    content: "";
+    position: absolute;
+    right: 0; top: 0;
+    width: 0; height: 0;
+    border-left: 12px solid var(--aqua);
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-radius: 0 4px 0 0;
+  }
+  .fish-eye {
+    position: absolute;
+    left: 6px; top: 9px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--ink);
+    box-shadow: 0 0 0 1px var(--foam);
+    z-index: 2;
+  }
+  .upload-text {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--foam);
+    margin: 0 0 var(--space-2);
+  }
+  .upload-text-drag {
+    color: var(--aqua);
+  }
+  .upload-meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.7;
+  }
+  .upload-meta strong { color: var(--foam); font-weight: 600; }
+  .upload-cta {
+    margin-top: var(--space-4);
+    padding: 10px 22px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--aqua) 0%, var(--sea) 100%);
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 6px 20px rgba(39, 208, 196, 0.3);
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .upload-zone:hover .upload-cta {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(39, 208, 196, 0.45);
+  }
+
+  /* ============ 预览区 ============ */
+  .preview-card {
+    display: none;
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    animation: fadeUp 0.5s ease both;
+  }
+  .preview-card.is-active { display: block; }
+  .preview-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-5);
+    align-items: start;
+  }
+  .preview-image-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .preview-image-box {
+    width: 100%;
+    max-width: 500px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--ink);
+    position: relative;
+    min-height: 120px;
+    display: grid;
+    place-items: center;
+  }
+  .preview-image-box img {
+    width: 100%;
+    height: auto;
+    max-height: 460px;
+    object-fit: contain;
+    display: block;
+  }
+  .preview-loading {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(39, 208, 196, 0.2);
+    border-top-color: var(--aqua);
+    animation: spin 0.9s linear infinite;
+  }
+  .preview-info {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .preview-info span { display: inline-flex; align-items: center; gap: 5px; }
+  .preview-info strong { color: var(--foam); font-weight: 600; }
+  .preview-actions { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-end; }
+  .btn-ghost {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-ghost:hover {
+    color: var(--bad);
+    border-color: rgba(239, 91, 91, 0.4);
+    background: rgba(239, 91, 91, 0.08);
+  }
+  .btn-reupload-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--aqua);
+    border-color: var(--border-hover);
+  }
+  .btn-reupload-small:hover {
+    color: var(--aqua);
+    border-color: var(--aqua);
+    background: rgba(39, 208, 196, 0.08);
+  }
+
+  /* ============ 结果占位 ============ */
+  .result-placeholder {
+    padding: clamp(32px, 5vw, 48px) var(--space-5);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-align: center;
+    transition: border-color var(--transition);
+  }
+  .result-placeholder:hover { border-color: var(--border-hover); }
+  .result-icon {
+    width: 60px; height: 60px;
+    margin: 0 auto var(--space-4);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(39, 208, 196, 0.08);
+    border: 1px solid var(--border);
+    color: var(--aqua);
+  }
+  .result-icon svg { width: 28px; height: 28px; }
+  .result-text {
+    font-size: 15px;
+    color: var(--foam);
+    margin: 0 0 var(--space-2);
+    font-weight: 500;
+  }
+  .result-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* ============ 页脚 ============ */
+  footer {
+    text-align: center;
+    padding: var(--space-6) var(--space-4);
+    color: var(--muted);
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
+    border-top: 1px solid var(--border);
+    margin-top: var(--space-6);
+  }
+
+  /* ============ Toast ============ */
+  .toast-container {
+    position: fixed;
+    top: calc(var(--navbar-h) + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    background: rgba(239, 91, 91, 0.95);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(239, 91, 91, 0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+    pointer-events: auto;
+  }
+  .toast.is-leaving { animation: toastOut 0.3s ease both; }
+  .toast-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .toast.is-success { background: rgba(39, 208, 196, 0.95); color: var(--ink); }
+  .toast.is-success .toast-dot { background: var(--ink); }
+
+  /* ============ 动画 ============ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.15); opacity: 0; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ============ 移动端适配 ============ */
+  @media (max-width: 768px) {
+    .nav-links { gap: var(--space-4); }
+    .nav-links a { font-size: 13px; }
+    .brand-sub { display: none; }
+    .preview-body {
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+    .preview-actions {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+    }
+    .section-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .hero-badges { gap: var(--space-2); }
+    .badge { padding: 8px 14px; font-size: 12.5px; }
+  }
+  @media (max-width: 375px) {
+    .nav-links a:nth-child(3) { display: none; }
+    .upload-zone { padding: 28px var(--space-3); min-height: 200px; }
+    .upload-text { font-size: 15px; }
+    .hero-title { font-size: 38px; }
+    .preview-card { padding: var(--space-4); }
+  }
+
+  /* ============ 深海动态背景：气泡 / 光晕 / 水纹 ============ */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bubbles {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+  }
+  .bubble {
+    position: absolute;
+    bottom: -60px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.12) 35%,
+      rgba(39, 208, 196, 0.1) 70%,
+      transparent 100%
+    );
+    box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.15);
+    will-change: transform;
+    animation: rise linear infinite;
+  }
+  @keyframes rise {
+    0% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0; }
+    8% { opacity: 0.9; }
+    50% { transform: translate3d(var(--sway, 0px), -50vh, 0) scale(1); }
+    92% { opacity: 0.7; }
+    100% { transform: translate3d(calc(var(--sway, 0px) * -1), -110vh, 0) scale(0.9); opacity: 0; }
+  }
+
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    will-change: transform, opacity;
+  }
+  .glow-1 {
+    top: -120px; right: -80px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(39, 208, 196, 0.35), transparent 65%);
+    animation: breathe 12s ease-in-out infinite;
+  }
+  .glow-2 {
+    bottom: 8%; left: -100px;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(17, 133, 184, 0.4), transparent 65%);
+    animation: breathe 15s ease-in-out infinite reverse;
+  }
+  .glow-3 {
+    top: 35%; left: 50%;
+    width: 280px; height: 280px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(155, 180, 204, 0.18), transparent 65%);
+    animation: breathe 10s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1) translate(var(--gx, 0), 0); opacity: 0.55; }
+    50% { transform: scale(1.18) translate(var(--gx, 0), 0); opacity: 0.9; }
+  }
+  .glow-3 { --gx: -50%; }
+
+  /* 底部水纹波浪 */
+  .wave {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: 0;
+    height: 220px;
+    opacity: 0.08;
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 1400px 220px;
+    will-change: transform;
+  }
+  .wave-1 {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 220' preserveAspectRatio='none'><path d='M0,120 C240,200 480,40 720,100 C960,160 1200,60 1400,120 L1400,220 L0,220 Z' fill='%2327d0c4'/></svg>");
+    animation: sway 7s ease-in-out infinite;
+  }
+  .wave-2 {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 220' preserveAspectRatio='none'><path d='M0,150 C240,90 480,210 720,140 C960,70 1200,180 1400,130 L1400,220 L0,220 Z' fill='%231185b8'/></svg>");
+    animation: sway 8.5s ease-in-out infinite reverse;
+    opacity: 0.06;
+  }
+  @keyframes sway {
+    0%, 100% { transform: translateX(-20px); }
+    50% { transform: translateX(20px); }
+  }
+
+  /* ============ 图片扫描动画 ============ */
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .preview-image-box.scanning .scan-overlay { opacity: 1; }
+  .preview-image-box.scan-complete .scan-overlay {
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  /* 扫描网格 */
+  .scan-grid {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(39, 208, 196, 0.12) 0 1px, transparent 1px 28px),
+      repeating-linear-gradient(90deg, rgba(39, 208, 196, 0.1) 0 1px, transparent 1px 28px);
+    opacity: 0.07;
+    mix-blend-mode: screen;
+  }
+
+  /* 扫描线 */
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    top: -10%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--aqua) 20%, #ffffff 50%, var(--aqua) 80%, transparent);
+    box-shadow: 0 0 15px rgba(39, 208, 196, 0.7), 0 0 30px rgba(39, 208, 196, 0.4);
+    opacity: 0;
+  }
+  .preview-image-box.scanning .scan-line {
+    opacity: 1;
+    animation: scan 2s linear infinite;
+  }
+  @keyframes scan {
+    0% { top: -5%; }
+    100% { top: 105%; }
+  }
+
+  /* 扫描状态徽标 */
+  .scan-badge {
+    position: absolute;
+    top: 12px; left: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(4, 22, 43, 0.7);
+    border: 1px solid var(--border-hover);
+    color: var(--aqua);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .preview-image-box.scanning .scan-badge {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .scan-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--aqua);
+    animation: blink 1s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ============ 骨架屏 ============ */
+  .skeleton-wrap {
+    display: none;
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+  }
+  .skeleton-wrap.loading { display: block; }
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--card);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  .skeleton-box {
+    height: 14px;
+    border-radius: 6px;
+  }
+  .skeleton-text {
+    height: 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .skeleton-circle {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+  }
+  .skeleton-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-md);
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* 骨架屏内部布局 */
+  .skel-row {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    margin-bottom: var(--space-5);
+  }
+  .skel-prob-row {
+    margin-bottom: 12px;
+  }
+  .skel-prob-row .skeleton-box { flex: 1; height: 10px; }
+
+  /* ============ 结果面板 ============ */
+  .results {
+    display: none;
+  }
+  .results.results-visible { display: block; }
+  .results.results-hidden { display: none; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .panel {
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  }
+  .panel:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-hover);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+  }
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 0 0 var(--space-4);
+  }
+
+  /* 子面板 A：新鲜度等级 */
+  .freshness-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .freshness-indicator {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .freshness-indicator::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.4;
+    animation: ringPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes ringPulse {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.18); opacity: 0; }
+  }
+  .freshness-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 14px currentColor;
+  }
+  .freshness-high { color: var(--fresh); }
+  .freshness-mid  { color: var(--mid); }
+  .freshness-low  { color: var(--bad); }
+  .freshness-label {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .freshness-meta {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* 子面板 B：置信度仪表盘 */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+  .gauge {
+    position: relative;
+    width: 140px; height: 140px;
+  }
+  .gauge svg { transform: rotate(-90deg); }
+  .gauge-track {
+    fill: none;
+    stroke: var(--card);
+    stroke-width: 8;
+  }
+  .gauge-progress {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .gauge-num {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--white);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .gauge-cap {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+  .gauge-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: var(--space-3);
+  }
+
+  /* 子面板 C：概率分布 */
+  .prob-list { display: flex; flex-direction: column; gap: 14px; }
+  .prob-row { display: flex; align-items: center; gap: 12px; }
+  .prob-name {
+    width: 64px;
+    font-size: 13px;
+    color: var(--foam);
+    flex-shrink: 0;
+  }
+  .prob-bar {
+    flex: 1;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    position: relative;
+  }
+  .prob-fill {
+    position: absolute;
+    inset: 0;
+    width: 0;
+    border-radius: 999px;
+    transition: width 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .prob-row.high .prob-fill {
+    background: linear-gradient(90deg, var(--aqua), #4be0d6);
+    box-shadow: 0 0 10px rgba(39, 208, 196, 0.5);
+  }
+  .prob-row.mid .prob-fill {
+    background: linear-gradient(90deg, var(--mid), #ffc97a);
+  }
+  .prob-row.low .prob-fill {
+    background: linear-gradient(90deg, var(--bad), #ff8888);
+  }
+  .prob-val {
+    width: 56px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 子面板 D：图像对比 */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .compare-item { display: flex; flex-direction: column; gap: 8px; }
+  .compare-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+  .compare-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--ink);
+    transition: transform var(--transition), border-color var(--transition);
+  }
+  .compare-img img { width: 100%; height: 100%; object-fit: cover; }
+  .compare-img:hover {
+    transform: scale(1.03);
+    border-color: var(--border-hover);
+  }
+  .heatmap-placeholder {
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(circle at 35% 45%, rgba(239, 91, 91, 0.7), transparent 35%),
+      radial-gradient(circle at 35% 45%, rgba(245, 181, 74, 0.6), transparent 55%),
+      radial-gradient(circle at 60% 60%, rgba(39, 208, 196, 0.5), transparent 70%),
+      linear-gradient(135deg, var(--ocean), var(--ink));
+    position: relative;
+  }
+  .heatmap-placeholder::after {
+    content: "Grad-CAM 热力图占位";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.5px;
+  }
+
+  /* 子面板 E：建议卡片 */
+  .advice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-3);
+  }
+  .advice-card {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    transition: transform var(--transition), border-color var(--transition);
+  }
+  .advice-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+  }
+  .advice-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .advice-icon {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    display: grid; place-items: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .advice-icon.store { background: rgba(39, 208, 196, 0.18); color: var(--aqua); }
+  .advice-icon.eat   { background: rgba(245, 181, 74, 0.18); color: var(--mid); }
+  .advice-icon.safe  { background: rgba(239, 91, 91, 0.18); color: var(--bad); }
+  .advice-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .advice-text {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* 子面板 F：结构化描述 */
+  .desc-quote {
+    border-left: 3px solid var(--aqua);
+    padding: 4px 0 4px var(--space-4);
+    margin: 0;
+    font-size: 14px;
+    color: var(--foam);
+    line-height: 1.75;
+  }
+
+  /* 空态占位（初始未上传时） */
+  .results-empty {
+    padding: clamp(32px, 5vw, 48px) var(--space-5);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-align: center;
+    transition: border-color var(--transition);
+  }
+  .results-empty:hover { border-color: var(--border-hover); }
+  .results-empty .result-icon {
+    width: 60px; height: 60px;
+    margin: 0 auto var(--space-4);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(39, 208, 196, 0.08);
+    border: 1px solid var(--border);
+    color: var(--aqua);
+  }
+  .results-empty .result-icon svg { width: 28px; height: 28px; }
+  .results-empty .result-text {
+    font-size: 15px;
+    color: var(--foam);
+    margin: 0 0 var(--space-2);
+    font-weight: 500;
+  }
+  .results-empty .result-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* 触发分析按钮（占位） */
+  .btn-analyze {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: var(--space-4);
+    padding: 12px 26px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--aqua) 0%, var(--sea) 100%);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 8px 24px rgba(39, 208, 196, 0.35);
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .btn-analyze:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(39, 208, 196, 0.5);
+  }
+  .btn-analyze:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ============ 入场动画 ============ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    will-change: opacity, transform;
+  }
+  .reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal[data-delay="1"] { transition-delay: 0.1s; }
+  .reveal[data-delay="2"] { transition-delay: 0.2s; }
+  .reveal[data-delay="3"] { transition-delay: 0.3s; }
+
+  /* 上传区脉冲光环 */
+  .upload-zone-pulse {
+    position: relative;
+  }
+  .upload-zone-pulse::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 0 0 0 rgba(39, 208, 196, 0.4);
+    animation: zonePulse 2s ease-out infinite;
+    pointer-events: none;
+  }
+  .upload-zone-pulse:hover::before { animation-duration: 1s; }
+  @keyframes zonePulse {
+    0% { box-shadow: 0 0 0 0 rgba(39, 208, 196, 0.4); }
+    100% { box-shadow: 0 0 0 14px rgba(39, 208, 196, 0); }
+  }
+
+  /* 移动端：结果面板堆叠 */
+  @media (max-width: 768px) {
+    .results-grid { grid-template-columns: 1fr; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .advice-grid { grid-template-columns: 1fr; }
+    .gauge { width: 120px; height: 120px; }
+    .gauge-num { font-size: 22px; }
+    .freshness-label { font-size: 22px; }
+    .btn-analyze { width: 100%; }
+  }
+
+  /* ============ 分析按钮（Session 3） ============ */
+  .analyze-actions {
+    margin-top: var(--space-4);
+    display: flex;
+    justify-content: center;
+  }
+  .btn-analyze {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 36px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--aqua), var(--sea));
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition), background var(--transition);
+    box-shadow: 0 6px 24px rgba(39, 208, 196, 0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-analyze:hover:not(.is-disabled):not(.is-loading) {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(39, 208, 196, 0.5);
+  }
+  .btn-analyze:active:not(.is-disabled):not(.is-loading) {
+    transform: translateY(-1px);
+  }
+  .btn-analyze.is-disabled {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--muted);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+  }
+  .btn-analyze.is-loading {
+    background: linear-gradient(135deg, var(--sea), var(--ocean));
+    color: var(--foam);
+    cursor: wait;
+    box-shadow: 0 4px 16px rgba(17, 133, 184, 0.4);
+  }
+  .btn-analyze.is-retry {
+    background: linear-gradient(135deg, var(--mid), var(--bad));
+    color: var(--white);
+    box-shadow: 0 6px 24px rgba(239, 91, 91, 0.35);
+  }
+  .btn-analyze-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--foam);
+    border-radius: 50%;
+    display: none;
+    animation: btn-spin 0.8s linear infinite;
+  }
+  .btn-analyze.is-loading .btn-analyze-spinner { display: inline-block; }
+  .btn-analyze.is-loading .btn-analyze-icon { display: none; }
+  @keyframes btn-spin { to { transform: rotate(360deg); } }
+
+  /* 离线模式徽标 */
+  .offline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--mid);
+    background: rgba(245, 181, 74, 0.15);
+    border: 1px solid rgba(245, 181, 74, 0.3);
+    border-radius: 999px;
+    vertical-align: middle;
+  }
+
+  /* 热力图图片样式 */
+  .heatmap-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    display: block;
+  }
+
+  /* 新鲜度卡片颜色过渡 */
+  .freshness-card {
+    transition: background-color 0.5s ease, border-color 0.5s ease;
+  }
+  /* 概率条宽度过渡 */
+  .prob-fill {
+    transition: width 0.8s ease;
+  }
+  /* 仪表盘进度过渡 */
+  .gauge-progress {
+    transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
+  }
+
+  /* ============ Session 4：报告 Tab 系统 ============ */
+  .report-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-5);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .report-tabs::-webkit-scrollbar { display: none; }
+  .report-tab {
+    flex: 0 0 auto;
+    padding: 12px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--transition), border-color var(--transition);
+    margin-bottom: -1px;
+  }
+  .report-tab:hover { color: var(--foam); }
+  .report-tab.is-active {
+    color: var(--aqua);
+    border-bottom-color: var(--aqua);
+  }
+  .report-tabpane {
+    display: none;
+    animation: tab-fade 0.3s ease;
+  }
+  .report-tabpane.is-active { display: block; }
+  @keyframes tab-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 关键指标摘要行 */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: var(--space-5);
+  }
+  .metric-item {
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+  .metric-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .metric-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--foam);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ 图像对比滑块 ============ */
+  .compare-slider {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--ink);
+    user-select: none;
+    touch-action: none;
+  }
+  .compare-slider img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .comp-overlay {
+    position: absolute;
+    inset: 0;
+    will-change: clip-path;
+  }
+  .comp-handle {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: var(--aqua);
+    transform: translateX(-50%);
+    cursor: col-resize;
+    z-index: 5;
+    box-shadow: 0 0 12px rgba(39, 208, 196, 0.6);
+  }
+  .comp-handle-knob {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--aqua);
+    color: var(--ink);
+    display: grid; place-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+  .comp-label {
+    position: absolute;
+    top: 10px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--foam);
+    border-radius: 999px;
+    z-index: 6;
+    pointer-events: none;
+  }
+  .comp-label.left { left: 10px; }
+  .comp-label.right { right: 10px; }
+
+  /* ============ 手风琴折叠 ============ */
+  .accordion {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+    background: var(--card);
+  }
+  .accordion-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.03);
+    transition: background var(--transition);
+  }
+  .accordion-head:hover { background: rgba(255, 255, 255, 0.06); }
+  .accordion-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--foam);
+  }
+  .accordion-arrow {
+    color: var(--muted);
+    transition: transform 0.3s ease;
+    font-size: 12px;
+  }
+  .accordion.is-open .accordion-arrow { transform: rotate(90deg); }
+  .accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .accordion.is-open .accordion-body { max-height: 1200px; }
+  .accordion-inner { padding: 16px 18px; }
+
+  /* ============ 导出按钮 ============ */
+  .report-toolbar {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--foam);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .btn-export:hover {
+    border-color: var(--border-hover);
+    color: var(--aqua);
+    transform: translateY(-2px);
+  }
+
+  /* ============ 历史记录 ============ */
+  .history-section { margin-top: var(--space-6); }
+  .history-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .history-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+  }
+  .history-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .history-filter input { accent-color: var(--aqua); cursor: pointer; }
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .history-empty {
+    padding: 28px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .history-item:hover {
+    border-color: var(--border-hover);
+    transform: translateX(4px);
+  }
+  .history-thumb {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--ink);
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-row1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .history-badge {
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+  }
+  .history-badge.high { background: rgba(39, 208, 196, 0.18); color: var(--aqua); }
+  .history-badge.mid  { background: rgba(245, 181, 74, 0.18); color: var(--mid); }
+  .history-badge.low  { background: rgba(239, 91, 91, 0.18); color: var(--bad); }
+  .history-conf {
+    font-size: 12.5px;
+    color: var(--foam);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .history-time {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .history-actions { display: flex; gap: 6px; }
+  .history-btn {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    display: grid; place-items: center;
+    transition: all var(--transition);
+  }
+  .history-btn:hover { color: var(--foam); border-color: var(--border-hover); }
+  .history-btn.is-fav { color: var(--mid); border-color: rgba(245, 181, 74, 0.4); }
+  .history-btn.del:hover { color: var(--bad); border-color: rgba(239, 91, 91, 0.4); }
+
+  /* ============ 新手引导气泡 ============ */
+  .onboarding-tip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: linear-gradient(135deg, var(--aqua), var(--sea));
+    color: var(--ink);
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 8px 28px rgba(39, 208, 196, 0.4);
+    z-index: 50;
+    animation: tip-bounce 2s ease infinite;
+  }
+  .onboarding-tip::before {
+    content: "";
+    position: absolute;
+    top: -7px; left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 14px; height: 14px;
+    background: var(--aqua);
+  }
+  @keyframes tip-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(12px); }
+    50%      { transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ============ 打印优化（导出截图降级） ============ */
+  @media print {
+    body { background: white !important; color: black !important; }
+    .bg-layer, .nav-bar, .hero, .upload-section, .intro-section, footer, .preview-card, .report-toolbar, .history-section, .analyze-actions { display: none !important; }
+    .results { color: black !important; }
+    .panel, .freshness-card, .advice-card, .metric-item, .accordion { background: white !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+    .freshness-label, .panel-title, .gauge-num, .history-title { color: black !important; }
+    .prob-fill { background: #27d0c4 !important; }
+  }
+
+  @media (max-width: 768px) {
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ============ Session 5：全局焦点样式 ============ */
+  :focus-visible {
+    outline: 2px solid var(--aqua);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* 所有可点击元素防双击缩放 */
+  button, a, .upload-zone, .report-tab, .history-item, .accordion-head, .comp-handle {
+    touch-action: manipulation;
+  }
+  /* 最小触摸尺寸保障 */
+  .btn-analyze, .btn-export, .history-btn, .nav-toggle {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ============ Session 5：汉堡菜单 ============ */
+  .nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 44px; height: 44px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    padding: 10px;
+  }
+  .nav-toggle-bar {
+    display: block;
+    width: 100%; height: 2px;
+    background: var(--foam);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  .nav-toggle.is-open .nav-toggle-bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle.is-open .nav-toggle-bar:nth-child(2) { opacity: 0; }
+  .nav-toggle.is-open .nav-toggle-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 22, 43, 0.97);
+    backdrop-filter: blur(14px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: overlay-fade 0.25s ease;
+  }
+  @keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
+  .nav-overlay[hidden] { display: none; }
+  .nav-overlay-links {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    text-align: center;
+  }
+  .nav-overlay-links a {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--foam);
+    text-decoration: none;
+    padding: 12px 24px;
+    transition: color var(--transition);
+  }
+  .nav-overlay-links a:hover { color: var(--aqua); }
+
+  /* ============ Session 5：离线模式横幅 ============ */
+  .offline-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin-bottom: var(--space-4);
+    background: rgba(245, 181, 74, 0.12);
+    border: 1px solid rgba(245, 181, 74, 0.4);
+    border-radius: var(--radius-lg);
+    color: var(--mid);
+    font-size: 13.5px;
+    font-weight: 600;
+    animation: banner-slide 0.4s ease;
+  }
+  .offline-banner[hidden] { display: none; }
+  @keyframes banner-slide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* 模拟数据小标签 */
+  .sim-tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--mid);
+    background: rgba(245, 181, 74, 0.18);
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+  /* 模拟热力图（CSS 径向渐变） */
+  .simulated-heatmap {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 45% 40%, rgba(255, 0, 0, 0.6) 0%, rgba(255, 255, 0, 0.3) 30%, transparent 60%),
+      radial-gradient(circle at 55% 45%, rgba(255, 100, 0, 0.4) 0%, transparent 40%);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  /* ============ Session 5：比赛页脚 ============ */
+  .competition-footer {
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    background: rgba(4, 22, 43, 0.5);
+  }
+  .competition-info, .tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: var(--space-3);
+  }
+  .competition-footer .badge,
+  .tech-stack span {
+    font-size: 12.5px;
+    padding: 5px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+  }
+  .competition-info .badge { color: var(--aqua); }
+  .footer-copy {
+    margin-top: var(--space-3);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  /* ============ Session 5：移动端深度适配 ============ */
+  @media (max-width: 1024px) {
+    .nav-links { gap: 18px; }
+  }
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .nav-toggle { display: flex; }
+    .hero-title { font-size: clamp(26px, 8vw, 42px); }
+    .upload-zone { width: 100%; min-height: 140px; }
+    .preview-img { max-width: 100%; }
+    .compare-slider { aspect-ratio: 1 / 1; }
+    .comp-handle-knob { width: 48px; height: 48px; font-size: 16px; }
+    .advice-grid { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr; }
+    .history-item { flex-wrap: wrap; }
+    .toast {
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: calc(100% - 24px);
+      max-width: 420px;
+    }
+    .report-tabs { gap: 2px; }
+    .report-tab { padding: 10px 12px; font-size: 13px; }
+    .competition-info, .tech-stack { gap: 6px; }
+    .competition-footer .badge,
+    .tech-stack span { font-size: 11px; padding: 4px 10px; }
+  }
+
+  /* ============ Session 5：减少动画偏好 ============ */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+    .bubble, .wave, .glow { display: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+
+  /* ============ Session 5：打印优化扩展 ============ */
+  @media print {
+    .nav-toggle, .nav-overlay, .offline-banner, .report-tabs, .skeleton-wrap, .analyze-actions { display: none !important; }
+    .report-tabpane { display: block !important; }
+    .results-grid, .advice-grid, .metrics-row { grid-template-columns: 1fr 1fr; }
+    .competition-footer { color: #555 !important; }
+  }
+
+  /* ============ 介绍区 (#intro) ============ */
+  .intro-section { padding-top: var(--space-3); }
+  .intro-block {
+    margin-bottom: var(--space-7);
+  }
+  .intro-block:last-child { margin-bottom: 0; }
+
+  .intro-heading {
+    font-size: clamp(22px, 3vw, 28px);
+    font-weight: 700;
+    color: var(--white);
+    margin: 0 0 var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .intro-heading::before {
+    content: "";
+    width: 5px; height: 22px;
+    background: linear-gradient(180deg, var(--aqua), var(--sea));
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .intro-sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0 0 var(--space-5);
+    padding-left: 17px;
+  }
+
+  /* 板块 1：痛点 vs 解法 双栏 */
+  .compare-pain {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .pain-card {
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform var(--transition), border-color var(--transition);
+  }
+  .pain-card:hover {
+    transform: translateY(-3px);
+  }
+  .pain-card.pain {
+    background: rgba(239, 91, 91, 0.07);
+    border-color: rgba(239, 91, 91, 0.25);
+  }
+  .pain-card.pain:hover { border-color: rgba(239, 91, 91, 0.5); }
+  .pain-card.solution {
+    background: rgba(39, 208, 196, 0.07);
+    border-color: rgba(39, 208, 196, 0.25);
+  }
+  .pain-card.solution:hover { border-color: rgba(39, 208, 196, 0.5); }
+  .pain-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--space-4);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .pain-card.pain .pain-card-head { color: var(--bad); }
+  .pain-card.solution .pain-card-head { color: var(--aqua); }
+  .pain-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .pain-card.pain .pain-icon { background: rgba(239, 91, 91, 0.18); }
+  .pain-card.solution .pain-icon { background: rgba(39, 208, 196, 0.18); }
+  .pain-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pain-list li {
+    font-size: 13.5px;
+    color: var(--foam);
+    line-height: 1.6;
+    padding-left: 20px;
+    position: relative;
+  }
+  .pain-list li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .pain-card.pain .pain-list li::before { background: var(--bad); }
+  .pain-card.solution .pain-list li::before { background: var(--aqua); }
+  .pain-list li strong { color: var(--white); font-weight: 600; }
+
+  /* 板块 2：三类用户卡片 */
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+  .user-card {
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  }
+  .user-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-hover);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+  }
+  .user-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    font-size: 22px;
+    margin-bottom: var(--space-3);
+    background: rgba(39, 208, 196, 0.12);
+    border: 1px solid var(--border-hover);
+  }
+  .user-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0 0 6px;
+  }
+  .user-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* 板块 3：方案对比表格 */
+  .table-wrap {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 560px;
+  }
+  .compare-table th,
+  .compare-table td {
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .compare-table thead th {
+    background: rgba(39, 208, 196, 0.08);
+    color: var(--aqua);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .compare-table tbody td:first-child {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .compare-table tbody td {
+    color: var(--foam);
+  }
+  .compare-table tbody td.highlight {
+    color: var(--aqua);
+    font-weight: 600;
+  }
+  .compare-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .compare-table tbody tr:last-child td { border-bottom: none; }
+
+  /* 板块 4：工作流时间轴 */
+  .workflow {
+    position: relative;
+    padding-left: 0;
+  }
+  .workflow-node {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: 14px;
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    position: relative;
+  }
+  .workflow-node:hover {
+    transform: translateX(8px);
+    border-color: var(--border-hover);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  .workflow-node:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 36px;
+    bottom: -14px;
+    width: 2px;
+    height: 14px;
+    background: linear-gradient(180deg, var(--border-hover), transparent);
+  }
+  .workflow-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--aqua), var(--sea));
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(39, 208, 196, 0.3);
+  }
+  .workflow-body { flex: 1; }
+  .workflow-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0 0 4px;
+  }
+  .workflow-desc {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .workflow-branch {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .workflow-branch.high { background: rgba(39, 208, 196, 0.18); color: var(--aqua); }
+  .workflow-branch.mid  { background: rgba(245, 181, 74, 0.18); color: var(--mid); }
+  .workflow-branch.low  { background: rgba(239, 91, 91, 0.18); color: var(--bad); }
+
+  /* 介绍区移动端适配 */
+  @media (max-width: 768px) {
+    .compare-pain { grid-template-columns: 1fr; }
+    .users-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ 深海动态背景层 ============ -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+    <div class="bubbles" id="bubbles"></div>
+    <div class="wave wave-1"></div>
+    <div class="wave wave-2"></div>
+  </div>
+
+  <!-- ============ 导航栏 ============ -->
+  <header class="navbar" role="banner">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">FA</div>
+      <div class="brand-text">
+        <span class="brand-title">Fish-Agent</span>
+        <span class="brand-sub">水产品新鲜度智能评估</span>
+      </div>
+    </div>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="#home">首页</a>
+      <a href="#intro">关于</a>
+      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener">开源</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navOverlay">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </header>
+
+  <!-- 移动端全屏导航遮罩 -->
+  <div class="nav-overlay" id="navOverlay" hidden>
+    <nav class="nav-overlay-links" aria-label="移动端导航">
+      <a href="#home" data-close>首页</a>
+      <a href="#intro" data-close>关于</a>
+      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener" data-close>开源</a>
+    </nav>
+  </div>
+
+  <main id="home">
+
+    <!-- ============ Hero ============ -->
+    <section class="hero reveal" aria-labelledby="hero-title">
+      <h1 class="hero-title" id="hero-title">Fish-Agent</h1>
+      <p class="hero-tagline">一拍知鲜 · 吃得放心</p>
+      <p class="hero-desc">上传鱼眼照片，AI 秒级分析新鲜度，让每一餐都安心</p>
+      <div class="hero-badges" role="list">
+        <span class="badge" role="listitem">
+          <span class="badge-icon">🐟</span>
+          <span class="badge-num" data-count="99.23" data-suffix="%">0%</span> 准确率
+        </span>
+        <span class="badge" role="listitem">
+          <span class="badge-icon">⚡</span>
+          <span class="badge-num" data-count="16" data-suffix=" 节点">0</span> 工作流
+        </span>
+        <span class="badge" role="listitem">
+          <span class="badge-icon">🔬</span>
+          <span class="badge-num" data-count="3" data-suffix=" 级">0</span> 分类
+        </span>
+      </div>
+    </section>
+
+    <!-- ============ 上传 / 预览区 ============ -->
+    <section class="reveal" data-delay="1" aria-labelledby="upload-title">
+      <div class="section-head">
+        <h2 class="section-title" id="upload-title">上传鱼眼照片</h2>
+        <span class="section-hint">支持点击 · 拖拽 · 粘贴</span>
+      </div>
+
+      <!-- 隐藏的文件输入框（放在上传区外部，避免 click 事件冒泡递归） -->
+      <input
+        type="file"
+        id="fileInput"
+        accept="image/jpeg,image/png,image/webp"
+        hidden
+        aria-hidden="true"
+      />
+
+      <!-- 上传区（默认显示） -->
+      <div
+        id="uploadZone"
+        class="upload-zone upload-zone-pulse"
+        role="button"
+        tabindex="0"
+        aria-label="点击或拖拽上传鱼眼照片，也可粘贴截图"
+      >
+        <div class="upload-icon" aria-hidden="true">
+          <div class="fish-icon"><span class="fish-eye"></span></div>
+        </div>
+        <p class="upload-text" id="uploadText">点击或拖拽上传鱼眼照片</p>
+        <p class="upload-meta">
+          支持 <strong>JPG / PNG / WebP</strong> · 最大 <strong>25MB</strong><br />
+          也可按 <strong>Ctrl + V</strong> 粘贴截图
+        </p>
+        <span class="upload-cta">选择照片</span>
+        <div class="onboarding-tip" id="onboardingTip" hidden>点击或拖拽鱼眼照片到此处 📸</div>
+      </div>
+
+      <!-- 预览区（上传后显示） -->
+      <div id="previewCard" class="preview-card" aria-live="polite">
+        <div class="preview-body">
+          <div class="preview-image-wrap">
+            <div class="preview-image-box" id="previewImageBox">
+              <div class="preview-loading" id="previewLoading" aria-hidden="true"></div>
+              <img id="previewImage" alt="鱼眼照片预览" hidden />
+              <!-- 扫描动画覆盖层 -->
+              <div class="scan-overlay" aria-hidden="true">
+                <div class="scan-grid"></div>
+                <div class="scan-line"></div>
+              </div>
+              <div class="scan-badge" aria-hidden="true">
+                <span class="scan-dot"></span> AI 扫描中
+              </div>
+            </div>
+            <div class="preview-info" id="previewInfo">
+              <span>📷 <strong id="infoName">—</strong></span>
+              <span>📏 <strong id="infoSize">—</strong></span>
+              <span>🔲 <strong id="infoDim">—</strong></span>
+            </div>
+          </div>
+          <div class="preview-actions">
+            <button class="btn-ghost" id="clearBtn" type="button" aria-label="清除当前图片并重新选择">
+              ✕ 重新选择
+            </button>
+            <button class="btn-ghost btn-reupload-small" id="reuploadBtn" type="button" aria-label="重新上传一张照片">
+              ↻ 换一张
+            </button>
+          </div>
+        </div>
+        <!-- 开始分析按钮（Session 3） -->
+        <div class="analyze-actions">
+          <button class="btn-analyze is-disabled" id="analyzeBtn" type="button" disabled aria-label="开始 AI 分析">
+            <span class="btn-analyze-icon" aria-hidden="true">🔍</span>
+            <span class="btn-analyze-text" id="analyzeBtnText">请先上传鱼眼照片</span>
+            <span class="btn-analyze-spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 结果区 ============ -->
+    <section class="reveal" data-delay="2" aria-labelledby="result-title">
+      <div class="section-head">
+        <h2 class="section-title" id="result-title">分析结果</h2>
+        <span class="section-hint" id="resultHint">上传后将在此展示</span>
+      </div>
+
+      <!-- 空态：未上传时 -->
+      <div class="results-empty" id="resultsEmpty">
+        <div class="result-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+          </svg>
+        </div>
+        <p class="result-text">上传鱼眼照片后，AI 将在此展示新鲜度分析结果</p>
+        <p class="result-sub">基于 FishFreshNetV1 深度学习模型 + Grad-CAM 可解释热力图</p>
+      </div>
+
+      <!-- 骨架屏：分析中 -->
+      <div class="skeleton-wrap" id="skeletonWrap" aria-hidden="true">
+        <div class="skel-row">
+          <div class="skeleton skeleton-circle"></div>
+          <div style="flex:1">
+            <div class="skeleton skeleton-box" style="width:50%; margin-bottom:10px;"></div>
+            <div class="skeleton skeleton-box" style="width:80%; margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-box" style="width:65%;"></div>
+          </div>
+        </div>
+        <div style="margin-bottom:24px;">
+          <div class="skeleton skeleton-box" style="width:100%; height:10px; margin-bottom:16px;"></div>
+        </div>
+        <div class="skel-prob-row">
+          <div class="skeleton skeleton-box" style="width:50px; flex:0 0 auto;"></div>
+          <div class="skeleton skeleton-box" style="flex:1;"></div>
+        </div>
+        <div class="skel-prob-row">
+          <div class="skeleton skeleton-box" style="width:50px; flex:0 0 auto;"></div>
+          <div class="skeleton skeleton-box" style="flex:1;"></div>
+        </div>
+        <div class="skel-prob-row" style="margin-bottom:24px;">
+          <div class="skeleton skeleton-box" style="width:50px; flex:0 0 auto;"></div>
+          <div class="skeleton skeleton-box" style="flex:1;"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+          <div class="skeleton skeleton-img"></div>
+          <div class="skeleton skeleton-img"></div>
+        </div>
+        <div class="skeleton skeleton-text" style="width:100%;"></div>
+        <div class="skeleton skeleton-text" style="width:60%;"></div>
+      </div>
+
+      <!-- 结果面板：4-tab 分析报告（Session 4 重构） -->
+      <div class="results results-hidden" id="resultsPanel">
+
+        <!-- 离线模式横幅（Session 5） -->
+        <div class="offline-banner" id="offlineBanner" hidden>
+          <span class="offline-icon" aria-hidden="true">⚠️</span>
+          <span class="offline-text">当前为离线演示模式。AI 分析服务暂时不可用，展示的是模拟分析结果。</span>
+        </div>
+
+        <!-- 工具栏：导出按钮 -->
+        <div class="report-toolbar">
+          <button class="btn-export" id="exportJsonBtn" type="button" aria-label="导出 JSON 报告">📄 导出 JSON</button>
+          <button class="btn-export" id="exportImgBtn" type="button" aria-label="保存报告截图">📸 保存截图</button>
+        </div>
+
+        <!-- Tab 导航 -->
+        <div class="report-tabs" role="tablist" aria-label="分析报告视图">
+          <button class="report-tab is-active" role="tab" data-tab="overview" aria-selected="true">📊 概览</button>
+          <button class="report-tab" role="tab" data-tab="vision" aria-selected="false">👁 AI 视觉分析</button>
+          <button class="report-tab" role="tab" data-tab="detail" aria-selected="false">📋 详细报告</button>
+          <button class="report-tab" role="tab" data-tab="advice" aria-selected="false">💡 处理建议</button>
+        </div>
+
+        <!-- Tab 1：概览 -->
+        <div class="report-tabpane is-active" data-pane="overview" role="tabpanel">
+          <!-- 关键指标摘要行 -->
+          <div class="metrics-row">
+            <div class="metric-item">
+              <div class="metric-label">👁 鱼眼外观</div>
+              <div class="metric-val" id="metricAppearance">—</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">📊 置信度</div>
+              <div class="metric-val" id="metricConfidence">—</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">⏱ 分析耗时</div>
+              <div class="metric-val" id="metricDuration">—</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">📅 分析时间</div>
+              <div class="metric-val" id="metricTime">—</div>
+            </div>
+          </div>
+
+          <!-- 新鲜度等级 + 置信度仪表盘 -->
+          <div class="results-grid">
+            <div class="panel">
+              <p class="panel-title">新鲜度等级</p>
+              <div class="freshness-card freshness-high" id="freshnessCard">
+                <div class="freshness-indicator">
+                  <div class="freshness-dot"></div>
+                </div>
+                <div>
+                  <div class="freshness-label" id="freshnessLabel">高度新鲜</div>
+                  <div class="freshness-meta" id="freshnessMeta">置信度 99.23% · 基于 FishFreshNetV1</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <p class="panel-title">模型置信度</p>
+              <div class="gauge-wrap">
+                <div class="gauge" data-confidence="0.9923" id="gaugeWrap">
+                  <svg viewBox="0 0 120 120" width="140" height="140">
+                    <defs>
+                      <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#27d0c4"/>
+                        <stop offset="50%" stop-color="#f5b54a"/>
+                        <stop offset="100%" stop-color="#ef5b5b"/>
+                      </linearGradient>
+                      <linearGradient id="gaugeGradHigh" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#27d0c4"/>
+                        <stop offset="100%" stop-color="#2af5c4"/>
+                      </linearGradient>
+                      <linearGradient id="gaugeGradMid" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f5b54a"/>
+                        <stop offset="100%" stop-color="#ffd06a"/>
+                      </linearGradient>
+                      <linearGradient id="gaugeGradLow" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ef5b5b"/>
+                        <stop offset="100%" stop-color="#ff7878"/>
+                      </linearGradient>
+                    </defs>
+                    <circle class="gauge-track" cx="60" cy="60" r="52"/>
+                    <circle
+                      class="gauge-progress"
+                      cx="60" cy="60" r="52"
+                      stroke="url(#gaugeGrad)"
+                      stroke-dasharray="326.7"
+                      stroke-dashoffset="2.5"
+                      id="gaugeProgress"
+                    />
+                  </svg>
+                  <div class="gauge-center">
+                    <div class="gauge-num" id="gaugeNum">99.2%</div>
+                    <div class="gauge-cap">CONFIDENCE</div>
+                  </div>
+                </div>
+                <div class="gauge-label">FishFreshNetV1 输出</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 概率分布 -->
+          <div class="panel" style="margin-bottom:16px;">
+            <p class="panel-title">三类概率分布</p>
+            <div class="prob-list">
+              <div class="prob-row high">
+                <span class="prob-name">高度新鲜</span>
+                <div class="prob-bar"><div class="prob-fill" style="width:99.2%;" data-prob="high" id="probBarHigh"></div></div>
+                <span class="prob-val" id="probValHigh">99.2%</span>
+              </div>
+              <div class="prob-row mid">
+                <span class="prob-name">新鲜</span>
+                <div class="prob-bar"><div class="prob-fill" style="width:0.5%;" data-prob="mid" id="probBarMid"></div></div>
+                <span class="prob-val" id="probValMid">0.5%</span>
+              </div>
+              <div class="prob-row low">
+                <span class="prob-name">不新鲜</span>
+                <div class="prob-bar"><div class="prob-fill" style="width:0.3%;" data-prob="low" id="probBarLow"></div></div>
+                <span class="prob-val" id="probValLow">0.3%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2：AI 视觉分析 -->
+        <div class="report-tabpane" data-pane="vision" role="tabpanel">
+          <div class="panel" style="margin-bottom:16px;">
+            <p class="panel-title">原图 vs AI 关注区域（拖动滑块对比）</p>
+            <!-- 图像对比滑块 -->
+            <div class="compare-slider" id="compareSlider">
+              <img id="compareOriginal" alt="原图" src="" />
+              <div class="comp-overlay" id="compOverlay" style="clip-path: inset(0 50% 0 0);">
+                <img id="compareHeatmap" alt="Grad-CAM 热力图" src="" />
+              </div>
+              <span class="comp-label left">原图</span>
+              <span class="comp-label right">热力图</span>
+              <div class="comp-handle" id="compHandle" style="left:50%;">
+                <div class="comp-handle-knob" aria-hidden="true">⟺</div>
+              </div>
+            </div>
+            <p class="result-sub" style="margin-top:12px;">高亮区域 = 模型判断的关键依据，颜色越深表示该区域对新鲜度判断贡献越大。</p>
+            <blockquote class="desc-quote" id="visionExplain" style="margin-top:10px;">
+              模型主要关注鱼眼瞳孔与角膜边缘区域，这些区域的清澈度与光泽度是新鲜度的核心判据。
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- Tab 3：详细报告（手风琴） -->
+        <div class="report-tabpane" data-pane="detail" role="tabpanel">
+          <div class="accordion is-open" data-acc="appearance">
+            <div class="accordion-head">
+              <span class="accordion-title">鱼眼外观评估</span>
+              <span class="accordion-arrow" aria-hidden="true">▶</span>
+            </div>
+            <div class="accordion-body">
+              <div class="accordion-inner">
+                <blockquote class="desc-quote" id="descQuote">
+                  鱼眼清澈明亮，角膜透明，瞳孔清晰可见，表面有自然光泽。综合判断为高度新鲜，建议在 24 小时内食用以获得最佳口感。
+                </blockquote>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion" data-acc="trend">
+            <div class="accordion-head">
+              <span class="accordion-title">新鲜度趋势预测</span>
+              <span class="accordion-arrow" aria-hidden="true">▶</span>
+            </div>
+            <div class="accordion-body">
+              <div class="accordion-inner" id="trendBody">
+                <p class="advice-text">基于当前新鲜度等级与置信度，预测剩余保质时间约 <strong id="shelfLife">24 小时</strong>。建议在此窗口内食用以保障口感与安全。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion" data-acc="knowledge">
+            <div class="accordion-head">
+              <span class="accordion-title">知识图谱匹配</span>
+              <span class="accordion-arrow" aria-hidden="true">▶</span>
+            </div>
+            <div class="accordion-body">
+              <div class="accordion-inner" id="knowledgeBody">
+                <p class="advice-text" id="knowledgeText">该新鲜度等级下鱼眼的标准特征：角膜透明、瞳孔清晰、表面有自然光泽。当前样本与标准特征匹配度高。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4：处理建议（手风琴） -->
+        <div class="report-tabpane" data-pane="advice" role="tabpanel">
+          <div class="advice-grid" id="adviceGrid">
+            <div class="advice-card">
+              <div class="advice-head">
+                <span class="advice-icon store" aria-hidden="true">❄</span>
+                <span class="advice-title">储存建议</span>
+              </div>
+              <p class="advice-text" id="adviceStore">冷藏 0–4°C 保鲜，避免反复解冻。当前状态可存放 24 小时。</p>
+            </div>
+            <div class="advice-card">
+              <div class="advice-head">
+                <span class="advice-icon eat" aria-hidden="true">🍽</span>
+                <span class="advice-title">食用建议</span>
+              </div>
+              <p class="advice-text" id="adviceEat">建议尽快食用以获得最佳口感，清蒸或刺身均为优选。</p>
+            </div>
+            <div class="advice-card">
+              <div class="advice-head">
+                <span class="advice-icon safe" aria-hidden="true">⚠</span>
+                <span class="advice-title">安全提示</span>
+              </div>
+              <p class="advice-text" id="adviceSafe">鱼眼清澈、鳃部鲜红为新鲜标志。如出现浑浊或异味请勿食用。</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============ 历史记录区 ============ -->
+      <div class="history-section">
+        <div class="history-head">
+          <h3 class="history-title">📋 历史记录</h3>
+          <label class="history-filter">
+            <input type="checkbox" id="favFilter" /> 仅显示收藏
+          </label>
+        </div>
+        <div class="history-list" id="historyList">
+          <div class="history-empty" id="historyEmpty">暂无历史记录，上传第一张鱼眼照片开始分析吧！</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 介绍区 ============ -->
+    <section id="intro" class="intro-section reveal" data-delay="3" aria-labelledby="intro-title">
+      <h2 class="intro-heading" id="intro-title">关于 Fish-Agent</h2>
+      <p class="intro-sub">用一张鱼眼照片，让水产品新鲜度判断从"凭经验"变成"看证据"。</p>
+
+      <!-- 板块 1：痛点 vs 解法 -->
+      <div class="intro-block">
+        <div class="compare-pain">
+          <div class="pain-card pain">
+            <div class="pain-card-head">
+              <span class="pain-icon" aria-hidden="true">!</span>
+              <span>当前痛点</span>
+            </div>
+            <ul class="pain-list">
+              <li>肉眼经验依赖个人技术，新手难掌握</li>
+              <li>化学检测成本高、周期长，且<strong>破坏样品</strong></li>
+              <li>现有工具只给结论，不告诉"为什么"和"怎么办"</li>
+            </ul>
+          </div>
+          <div class="pain-card solution">
+            <div class="pain-card-head">
+              <span class="pain-icon" aria-hidden="true">✓</span>
+              <span>Fish-Agent 解法</span>
+            </div>
+            <ul class="pain-list">
+              <li>鱼眼照片入口，<strong>低成本非破坏式</strong></li>
+              <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong></li>
+              <li>Grad-CAM 热力图解释"为什么"，结构化报告给出"怎么办"</li>
+              <li>置信度驱动自适应分支，低置信度主动提示重拍</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 板块 2：三类用户 -->
+      <div class="intro-block">
+        <h3 class="intro-heading" style="font-size:20px;">面向三类用户</h3>
+        <div class="users-grid">
+          <div class="user-card">
+            <div class="user-icon" aria-hidden="true">🛒</div>
+            <h4 class="user-title">消费者</h4>
+            <p class="user-text">菜市场 / 超市买鱼时拍照即知新鲜度，告别"凭手感挑鱼"的盲选。</p>
+          </div>
+          <div class="user-card">
+            <div class="user-icon" aria-hidden="true">🐟</div>
+            <h4 class="user-title">商贩与采购</h4>
+            <p class="user-text">批量进货验收，一键导出 CSV 汇总，留档对账，降低退货纠纷。</p>
+          </div>
+          <div class="user-card">
+            <div class="user-icon" aria-hidden="true">📋</div>
+            <h4 class="user-title">质检监管</h4>
+            <p class="user-text">生成 PDF 报告存档，含结论、置信度、建议与时间戳，全程可追溯。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 板块 3：方案对比表格 -->
+      <div class="intro-block">
+        <h3 class="intro-heading" style="font-size:20px;">方案对比</h3>
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col">维度</th>
+                <th scope="col">肉眼经验</th>
+                <th scope="col">化学检测</th>
+                <th scope="col">Fish-Agent</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>成本</td>
+                <td>免费但靠人</td>
+                <td>高</td>
+                <td class="highlight">极低</td>
+              </tr>
+              <tr>
+                <td>速度</td>
+                <td>因人而异</td>
+                <td>数小时</td>
+                <td class="highlight">数秒</td>
+              </tr>
+              <tr>
+                <td>破坏样品</td>
+                <td>否</td>
+                <td>是</td>
+                <td class="highlight">否</td>
+              </tr>
+              <tr>
+                <td>可解释</td>
+                <td>靠经验</td>
+                <td>数据难懂</td>
+                <td class="highlight">Grad-CAM + 文字</td>
+              </tr>
+              <tr>
+                <td>可留档</td>
+                <td>无法</td>
+                <td>纸质</td>
+                <td class="highlight">PDF / JSON</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 板块 4：工作流时间轴 -->
+      <div class="intro-block">
+        <h3 class="intro-heading" style="font-size:20px;">工作流架构</h3>
+        <p class="intro-sub">16 节点 · 14 步 · 置信度驱动自适应分支。</p>
+        <div class="workflow">
+          <div class="workflow-node">
+            <div class="workflow-num">1</div>
+            <div class="workflow-body">
+              <p class="workflow-name">图像上传</p>
+              <p class="workflow-desc">接收鱼眼照片并记录上传时间，进入处理流水线。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">2</div>
+            <div class="workflow-body">
+              <p class="workflow-name">质量检测</p>
+              <p class="workflow-desc">判断是否鱼类、是否含鱼眼、图像质量是否合格，不合格即提示重拍。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">3</div>
+            <div class="workflow-body">
+              <p class="workflow-name">鱼眼区域识别</p>
+              <p class="workflow-desc">识别鱼眼、鳃部、体表三个关键区域，为多区域融合做准备。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">4</div>
+            <div class="workflow-body">
+              <p class="workflow-name">FishFreshNetV1 分类</p>
+              <p class="workflow-desc">优先调用专用模型三分类（高度新鲜 / 新鲜 / 不新鲜），失败回退多模态大模型。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">5</div>
+            <div class="workflow-body">
+              <p class="workflow-name">置信度分支 <span class="workflow-branch high">≥0.8</span> <span class="workflow-branch mid">0.5–0.8</span> <span class="workflow-branch low">&lt;0.5</span></p>
+              <p class="workflow-desc">高置信直出，中置信走多区域融合，低置信由大模型复核仲裁。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">6</div>
+            <div class="workflow-body">
+              <p class="workflow-name">Grad-CAM 热力图</p>
+              <p class="workflow-desc">调用真实 Grad-CAM 服务生成关注区域解释，失败时生成降级关注区域说明。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">7</div>
+            <div class="workflow-body">
+              <p class="workflow-name">结构化分析</p>
+              <p class="workflow-desc">鱼眼外观、清澈度、颜色、纹理与质量指标的结构化输出。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">8</div>
+            <div class="workflow-body">
+              <p class="workflow-name">时序预测</p>
+              <p class="workflow-desc">新鲜度趋势与剩余保质时间预测，给出最佳食用窗口。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">9</div>
+            <div class="workflow-body">
+              <p class="workflow-name">报告生成</p>
+              <p class="workflow-desc">结构化报告与知识图谱匹配，可导出 PDF / JSON。</p>
+            </div>
+          </div>
+          <div class="workflow-node">
+            <div class="workflow-num">10</div>
+            <div class="workflow-body">
+              <p class="workflow-name">建议输出</p>
+              <p class="workflow-desc">储存、食用、处理、安全四类建议，按新鲜度等级动态生成。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!--
+    TRAE 初赛评审维度自检：
+    ✅ 创新性：首创鱼眼图像非破坏式新鲜度检测
+    ✅ 实用性：解决消费者/商贩/监管三方实际痛点
+    ✅ 技术实现：CNN 模型 (EfficientNet-B0 + CBAM) + Grad-CAM + LangGraph 16 节点工作流
+    ✅ 完成度：完整前端交互 + API 集成 + 离线降级 + 历史记录 + 报告导出
+    ✅ 社会价值：食品安全普惠工具，契合"健康中国"战略方向
+  -->
+  <!-- ============ 页脚 ============ -->
+  <footer class="competition-footer">
+    <div class="competition-info">
+      <span class="badge">🏆 TRAE AI 创造力大赛</span>
+      <span class="badge">🏷 社会服务赛道</span>
+      <span class="badge">👤 参赛者：祈雨柒</span>
+    </div>
+    <div class="tech-stack">
+      <span>🐍 Python + FastAPI</span>
+      <span>🧠 PyTorch + EfficientNet-B0</span>
+      <span>🔗 LangGraph 工作流</span>
+      <span>🎨 纯 HTML/CSS/JS 前端</span>
+    </div>
+    <div class="footer-copy">Fish-Agent © 2026</div>
+  </footer>
+
+  <!-- ============ Toast 容器 ============ -->
+  <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+
+  <script>
+    "use strict";
+
+    // ============ 全局状态（供后续 Session 使用）============
+    /**
+     * @type {File|null} 当前选中的图片文件对象，后续 API 调用会用到
+     */
+    let selectedFile = null;
+    /**
+     * @type {string|null} 当前图片的 base64 Data URL，预览用
+     */
+    let selectedFileDataURL = null;
+
+    // ============ 常量 ============
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+
+    // ---- Session 3：API 配置与全局状态 ----
+    const API_BASE_URL = "https://andreas777-fish-agent.hf.space";
+    const API_TIMEOUT = 60000; // 60 秒超时（HF Spaces 冷启动预留）
+    let apiAvailable = false;          // 健康检查结果
+    let analysisInProgress = false;    // 是否正在分析中
+    let lastAnalysisResult = null;     // 最近一次分析结果（JSON）
+    let currentAbortController = null; // 当前请求的 AbortController（用于切换图片时取消）
+
+    // ============ DOM 引用 ============
+    const uploadZone = document.getElementById("uploadZone");
+    const uploadText = document.getElementById("uploadText");
+    const fileInput = document.getElementById("fileInput");
+    const previewCard = document.getElementById("previewCard");
+    const previewImage = document.getElementById("previewImage");
+    const previewLoading = document.getElementById("previewLoading");
+    const previewImageBox = document.getElementById("previewImageBox");
+    const infoName = document.getElementById("infoName");
+    const infoSize = document.getElementById("infoSize");
+    const infoDim = document.getElementById("infoDim");
+    const clearBtn = document.getElementById("clearBtn");
+    const reuploadBtn = document.getElementById("reuploadBtn");
+    const toastContainer = document.getElementById("toastContainer");
+    const bubblesEl = document.getElementById("bubbles");
+    const resultsEmpty = document.getElementById("resultsEmpty");
+    const skeletonWrap = document.getElementById("skeletonWrap");
+    const resultsPanel = document.getElementById("resultsPanel");
+    const compareOriginal = document.getElementById("compareOriginal");
+
+    // ---- Session 3：结果面板 DOM 引用 ----
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const analyzeBtnText = document.getElementById("analyzeBtnText");
+    const freshnessCard = document.getElementById("freshnessCard");
+    const freshnessLabel = document.getElementById("freshnessLabel");
+    const freshnessMeta = document.getElementById("freshnessMeta");
+    const gaugeWrap = document.getElementById("gaugeWrap");
+    const gaugeProgress = document.getElementById("gaugeProgress");
+    const gaugeNum = document.getElementById("gaugeNum");
+    const probBarHigh = document.getElementById("probBarHigh");
+    const probBarMid = document.getElementById("probBarMid");
+    const probBarLow = document.getElementById("probBarLow");
+    const probValHigh = document.getElementById("probValHigh");
+    const probValMid = document.getElementById("probValMid");
+    const probValLow = document.getElementById("probValLow");
+    const adviceStore = document.getElementById("adviceStore");
+    const adviceEat = document.getElementById("adviceEat");
+    const adviceSafe = document.getElementById("adviceSafe");
+    const adviceGrid = document.getElementById("adviceGrid");
+    const descQuote = document.getElementById("descQuote");
+    const resultHint = document.getElementById("resultHint");
+    const resultsSection = document.querySelector('section[aria-labelledby="result-title"]');
+
+    // ---- Session 4：新增 DOM 引用 ----
+    const compareHeatmap = document.getElementById("compareHeatmap");
+    const compOverlay = document.getElementById("compOverlay");
+    const compHandle = document.getElementById("compHandle");
+    const compareSlider = document.getElementById("compareSlider");
+    const visionExplain = document.getElementById("visionExplain");
+    const metricAppearance = document.getElementById("metricAppearance");
+    const metricConfidence = document.getElementById("metricConfidence");
+    const metricDuration = document.getElementById("metricDuration");
+    const metricTime = document.getElementById("metricTime");
+    const shelfLife = document.getElementById("shelfLife");
+    const knowledgeText = document.getElementById("knowledgeText");
+    const historyList = document.getElementById("historyList");
+    const historyEmpty = document.getElementById("historyEmpty");
+    const favFilter = document.getElementById("favFilter");
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    const exportImgBtn = document.getElementById("exportImgBtn");
+    const onboardingTip = document.getElementById("onboardingTip");
+
+    // ============ 工具函数 ============
+
+    /**
+     * 格式化文件大小为人类可读字符串
+     * @param {number} bytes
+     * @returns {string}
+     */
+    function formatFileSize(bytes) {
+      if (bytes === 0) return "0 B";
+      const k = 1024;
+      const units = ["B", "KB", "MB", "GB"];
+      const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
+      const val = bytes / Math.pow(k, i);
+      return `${val.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+    }
+
+    /**
+     * 显示 toast 通知
+     * @param {string} message 消息内容
+     * @param {"error"|"success"} [type="error"] 类型
+     * @param {number} [duration=3000] 自动消失时长（ms）
+     */
+    function showToast(message, type = "error", duration = 3000) {
+      const toast = document.createElement("div");
+      toast.className = `toast is-${type}`;
+      toast.setAttribute("role", "alert");
+      toast.innerHTML = `<span class="toast-dot"></span><span>${message}</span>`;
+      toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add("is-leaving");
+        toast.addEventListener("animationend", () => toast.remove(), { once: true });
+      }, duration);
+    }
+
+    /**
+     * 校验文件类型与大小
+     * @param {File} file
+     * @returns {{ok: boolean, reason?: string}}
+     */
+    function validateFile(file) {
+      if (!file) return { ok: false, reason: "未选择文件" };
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        return { ok: false, reason: `不支持的文件类型：${file.type || "未知"}，仅支持 JPG / PNG / WebP` };
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        return { ok: false, reason: `文件过大（${formatFileSize(file.size)}），最大支持 25MB` };
+      }
+      if (file.size === 0) {
+        return { ok: false, reason: "文件为空，请重新选择" };
+      }
+      return { ok: true };
+    }
+
+    /**
+     * 处理文件选择（核心入口）
+     * @param {File} file
+     */
+    function handleFileSelect(file) {
+      const check = validateFile(file);
+      if (!check.ok) {
+        showToast(check.reason, "error", 3500);
+        return;
+      }
+      selectedFile = file;
+      showPreview(file);
+    }
+
+    /**
+     * 读取并预览图片
+     * @param {File} file
+     */
+    function showPreview(file) {
+      // 切换到预览态
+      uploadZone.style.display = "none";
+      previewCard.classList.add("is-active");
+
+      // 重置加载态
+      previewImage.hidden = true;
+      previewLoading.hidden = false;
+      previewImageBox.appendChild(previewLoading);
+
+      // 文件信息（分辨率需等图片加载）
+      infoName.textContent = file.name;
+      infoSize.textContent = formatFileSize(file.size);
+      infoDim.textContent = "计算中…";
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataURL = e.target?.result;
+        selectedFileDataURL = dataURL;
+        previewImage.onload = () => {
+          previewLoading.hidden = true;
+          previewImage.hidden = false;
+          infoDim.textContent = `${previewImage.naturalWidth} × ${previewImage.naturalHeight}`;
+          // 同步到结果对比区原图缩略
+          if (compareOriginal) compareOriginal.src = dataURL;
+          // 上传完成后自动启动扫描动画
+          startScanning();
+          // 启用"开始分析"按钮
+          enableAnalyzeButton();
+        };
+        previewImage.onerror = () => {
+          previewLoading.hidden = true;
+          showToast("图片加载失败，请尝试其他文件", "error");
+          clearImage();
+        };
+        previewImage.src = dataURL;
+      };
+      reader.onerror = () => {
+        showToast("文件读取失败，请重试", "error");
+        clearImage();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * 清除当前图片，回到上传区
+     */
+    function clearImage() {
+      selectedFile = null;
+      selectedFileDataURL = null;
+      // 先解除 onload/onerror 处理器，避免清空 src 触发 onerror → clearImage 递归弹 toast
+      previewImage.onload = null;
+      previewImage.onerror = null;
+      previewImage.src = "";
+      previewImage.hidden = true;
+      previewLoading.hidden = true;
+      previewCard.classList.remove("is-active");
+      uploadZone.style.display = "flex";
+      fileInput.value = "";
+      uploadText.textContent = "点击或拖拽上传鱼眼照片";
+      uploadText.classList.remove("upload-text-drag");
+      // 同步清除扫描状态
+      stopScanning();
+      if (compareOriginal) compareOriginal.src = "";
+      // Session 3：取消进行中的分析请求 + 重置按钮
+      if (currentAbortController) {
+        currentAbortController.abort();
+        currentAbortController = null;
+      }
+      analysisInProgress = false;
+      resetAnalyzeButton();
+    }
+
+    /**
+     * 触发文件选择器（用于点击 / 键盘 / "换一张"）
+     */
+    function openFileDialog() {
+      fileInput.click();
+    }
+
+    // ============ 事件绑定 ============
+
+    // —— 点击上传 ——
+    uploadZone.addEventListener("click", openFileDialog);
+
+    // —— 键盘可访问性（Enter / Space）——
+    uploadZone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openFileDialog();
+      }
+    });
+
+    // —— 文件选择 change ——
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleFileSelect(file);
+    });
+
+    // —— 拖拽上传 ——
+    let dragCounter = 0;
+    uploadZone.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter++;
+      uploadZone.classList.add("is-dragover");
+      uploadText.textContent = "释放以添加照片";
+      uploadText.classList.add("upload-text-drag");
+    });
+    uploadZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    uploadZone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        uploadZone.classList.remove("is-dragover");
+        uploadText.textContent = "点击或拖拽上传鱼眼照片";
+        uploadText.classList.remove("upload-text-drag");
+      }
+    });
+    uploadZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter = 0;
+      uploadZone.classList.remove("is-dragover");
+      uploadText.textContent = "点击或拖拽上传鱼眼照片";
+      uploadText.classList.remove("upload-text-drag");
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        handleFileSelect(file);
+      } else {
+        showToast("未检测到文件，请重试", "error");
+      }
+    });
+
+    // 阻止整页拖放默认行为（避免浏览器直接打开图片）
+    ["dragover", "drop"].forEach((evt) => {
+      window.addEventListener(evt, (e) => {
+        if (!e.target.closest?.("#uploadZone")) e.preventDefault();
+      });
+    });
+
+    // —— 粘贴上传 ——
+    document.addEventListener("paste", (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            // 粘贴的截图通常无文件名，给个默认名
+            if (!file.name || file.name === "image.png") {
+              const ext = file.type.split("/")[1] || "png";
+              const renamed = new File([file], `paste_${Date.now()}.${ext}`, { type: file.type });
+              handleFileSelect(renamed);
+            } else {
+              handleFileSelect(file);
+            }
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+    });
+
+    // —— 预览区按钮 ——
+    clearBtn.addEventListener("click", clearImage);
+    reuploadBtn.addEventListener("click", openFileDialog);
+
+    // ============ Hero 数字 countUp 动画 ============
+    /**
+     * 对元素执行数字滚动动画
+     * @param {HTMLElement} el
+     * @param {number} target
+     * @param {string} suffix
+     */
+    function countUp(el, target, suffix) {
+      const duration = 1400;
+      const start = performance.now();
+      const isFloat = !Number.isInteger(target);
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        // easeOutCubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = target * eased;
+        el.textContent = (isFloat ? current.toFixed(2) : Math.round(current)) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.textContent = (isFloat ? target.toFixed(2) : target) + suffix;
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function initCountUp() {
+      const badges = document.querySelectorAll(".badge-num");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const el = entry.target;
+              const target = parseFloat(el.dataset.count || "0");
+              const suffix = el.dataset.suffix || "";
+              countUp(el, target, suffix);
+              observer.unobserve(el);
+            }
+          });
+        },
+        { threshold: 0.4 }
+      );
+      badges.forEach((b) => observer.observe(b));
+    }
+
+    // ============ 深海气泡生成 ============
+    /**
+     * 动态生成 N 个气泡元素，随机大小 / 位置 / 速度 / 漂移
+     * Session 5：移动端减少气泡数 + 尊重 prefers-reduced-motion
+     */
+    function initBubbles() {
+      if (!bubblesEl) return;
+      // 尊重"减少动画"系统偏好 → 不生成气泡
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+      const isMobile = window.matchMedia?.("(max-width: 640px)").matches;
+      const COUNT = isMobile ? 10 : 18;  // 移动端 8-12 个，桌面 15-25 个
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < COUNT; i++) {
+        const b = document.createElement("span");
+        b.className = "bubble";
+        const size = 8 + Math.random() * 32;       // 8-40px
+        const left = Math.random() * 100;            // 0-100%
+        const duration = 8 + Math.random() * 10;    // 8-18s
+        const delay = -Math.random() * duration;    // 负延迟 → 立即分散在时间轴上
+        const sway = (Math.random() * 60 - 30);     // ±30px
+        b.style.width = `${size}px`;
+        b.style.height = `${size}px`;
+        b.style.left = `${left}%`;
+        b.style.animationDuration = `${duration}s`;
+        b.style.animationDelay = `${delay}s`;
+        b.style.setProperty("--sway", `${sway}px`);
+        frag.appendChild(b);
+      }
+      bubblesEl.appendChild(frag);
+    }
+
+    // ============ 视差滚动 ============
+    /**
+     * 监听滚动，更新背景层 transform（rAF 节流）
+     */
+    function initParallax() {
+      let ticking = false;
+      const onScroll = () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            const y = window.scrollY || window.pageYOffset;
+            // 背景气泡以 0.3 倍速反向移动（视差感）
+            if (bubblesEl) bubblesEl.style.transform = `translate3d(0, ${y * -0.15}px, 0)`;
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+    }
+
+    // ============ 入场动画 ============
+    /**
+     * 监听 .reveal 元素进入视口时加 .revealed
+     */
+    function initReveal() {
+      const els = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window)) {
+        els.forEach((el) => el.classList.add("revealed"));
+        return;
+      }
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("revealed");
+              io.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      );
+      els.forEach((el) => io.observe(el));
+    }
+
+    // ============================================================
+    //  Session 3：API 调用 + 结果渲染 + 错误处理
+    // ============================================================
+
+    // ---- 分析按钮状态管理 ----
+
+    /**
+     * 启用分析按钮（图片加载完成后调用）
+     * Session 5：上传后焦点自动移到按钮
+     */
+    function enableAnalyzeButton() {
+      if (!analyzeBtn) return;
+      analyzeBtn.classList.remove("is-disabled", "is-loading", "is-retry");
+      analyzeBtn.disabled = false;
+      analyzeBtnText.textContent = "🔍 开始分析";
+      analyzeBtn.focus();
+    }
+
+    /**
+     * 设置按钮为加载态
+     */
+    function setAnalyzeLoading() {
+      if (!analyzeBtn) return;
+      analyzeBtn.classList.remove("is-disabled", "is-retry");
+      analyzeBtn.classList.add("is-loading");
+      analyzeBtn.disabled = true;
+      analyzeBtnText.textContent = "分析中…";
+    }
+
+    /**
+     * 设置按钮为重试态（分析失败后）
+     */
+    function setAnalyzeRetry() {
+      if (!analyzeBtn) return;
+      analyzeBtn.classList.remove("is-disabled", "is-loading");
+      analyzeBtn.classList.add("is-retry");
+      analyzeBtn.disabled = false;
+      analyzeBtnText.textContent = "⚠ 重试分析";
+    }
+
+    /**
+     * 设置按钮为完成态（分析成功后）
+     */
+    function setAnalyzeDone() {
+      if (!analyzeBtn) return;
+      analyzeBtn.classList.remove("is-disabled", "is-loading", "is-retry");
+      analyzeBtn.disabled = false;
+      analyzeBtnText.textContent = "🔍 重新分析";
+    }
+
+    /**
+     * 重置按钮到禁用态
+     */
+    function resetAnalyzeButton() {
+      if (!analyzeBtn) return;
+      analyzeBtn.classList.remove("is-loading", "is-retry");
+      analyzeBtn.classList.add("is-disabled");
+      analyzeBtn.disabled = true;
+      analyzeBtnText.textContent = "请先上传鱼眼照片";
+    }
+
+    // ---- 扫描动画 ----
+
+    /**
+     * 启动扫描动画：为预览图容器添加 .scanning class
+     */
+    function startScanning() {
+      previewImageBox.classList.remove("scan-complete");
+      previewImageBox.classList.add("scanning");
+    }
+
+    /**
+     * 停止扫描动画：移除 .scanning，添加 .scan-complete
+     */
+    function stopScanning() {
+      previewImageBox.classList.remove("scanning");
+      previewImageBox.classList.add("scan-complete");
+    }
+
+    // ---- 骨架屏 ----
+
+    function showLoading() {
+      skeletonWrap.classList.add("loading");
+      skeletonWrap.setAttribute("aria-hidden", "false");
+    }
+
+    function hideLoading() {
+      skeletonWrap.classList.remove("loading");
+      skeletonWrap.setAttribute("aria-hidden", "true");
+    }
+
+    // ---- 健康检查预热 ----
+
+    /**
+     * 页面加载时静默发起健康检查，预热 HF Spaces 冷启动
+     */
+    async function checkApiHealth() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(`${API_BASE_URL}/`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          apiAvailable = true;
+          console.log("%c✅ API 服务就绪", "color:#27d0c4;font-weight:bold");
+        } else {
+          apiAvailable = false;
+          console.warn(`⚠️ API 健康检查失败：HTTP ${res.status}，将使用离线演示模式`);
+          enableOfflineMode();
+        }
+      } catch (err) {
+        apiAvailable = false;
+        console.warn("⚠️ API 服务未就绪，将使用离线演示模式", err);
+        enableOfflineMode();
+      }
+    }
+
+    // ---- 核心分析流程 ----
+
+    /**
+     * 开始分析：发起真实 API 请求
+     * 流程：校验 → 启动扫描+骨架屏 → 滚动 → fetch → 渲染结果 / 错误处理
+     */
+    async function startAnalysis() {
+      if (!selectedFile) {
+        showToast("请先上传鱼眼照片", "error");
+        return;
+      }
+      if (analysisInProgress) {
+        // 取消上一个请求，重新开始
+        if (currentAbortController) currentAbortController.abort();
+      }
+
+      analysisInProgress = true;
+      setAnalyzeLoading();
+      startScanning();
+      // 记录分析开始时间（用于耗时统计）
+      analysisStartTime = performance.now();
+      // 隐藏空态、隐藏旧结果 → 显示骨架屏
+      resultsEmpty.style.display = "none";
+      resultsPanel.classList.remove("results-visible");
+      resultsPanel.classList.add("results-hidden");
+      showLoading();
+      // 滚动到结果区
+      if (resultsSection) {
+        resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      try {
+        // Session 5：离线模式走模拟流程
+        const data = offlineMode ? await simulateAnalysis() : await callPredictApi(selectedFile);
+        lastAnalysisResult = data;
+        const durationSec = (performance.now() - analysisStartTime) / 1000;
+        lastAnalysisResult.__processingTime = durationSec;
+        consecutiveFailures = 0; // 成功则重置失败计数
+        stopScanning();
+        hideLoading();
+        updateResults(data, durationSec);
+        // Session 4：保存到历史记录
+        addHistoryRecord(data, durationSec);
+        setAnalyzeDone();
+        if (resultHint) resultHint.textContent = offlineMode ? "离线演示 · 分析完成" : "分析完成";
+      } catch (err) {
+        stopScanning();
+        hideLoading();
+        handleAnalysisError(err);
+        setAnalyzeRetry();
+      } finally {
+        analysisInProgress = false;
+        currentAbortController = null;
+      }
+    }
+
+    /**
+     * 调用 /predict_with_gradcam 端点
+     * @param {File} file
+     * @returns {Promise<object>}
+     */
+    async function callPredictApi(file) {
+      const formData = new FormData();
+      formData.append("file", file); // 字段名必须为 'file'
+
+      currentAbortController = new AbortController();
+      const timeoutId = setTimeout(() => currentAbortController.abort(), API_TIMEOUT);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/predict_with_gradcam`, {
+          method: "POST",
+          body: formData,
+          signal: currentAbortController.signal,
+          // 不设置 Content-Type，让浏览器自动设置 multipart boundary
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          let detail = "";
+          try { detail = (await res.json()).detail || ""; } catch (_) {}
+          const httpErr = new HttpError(detail || `服务器错误`, res.status);
+          throw httpErr;
+        }
+        return await res.json();
+      } catch (err) {
+        clearTimeout(timeoutId);
+        // 已经是 HttpError 就直接抛出
+        if (err instanceof HttpError) throw err;
+        // AbortError
+        if (err.name === "AbortError") {
+          const e = new Error("ABORT");
+          e.name = "AbortError";
+          throw e;
+        }
+        // 网络错误
+        const netErr = new Error("网络连接失败");
+        netErr.name = "NetworkError";
+        netErr.cause = err;
+        throw netErr;
+      }
+    }
+
+    /**
+     * 自定义 HTTP 错误类型，携带状态码
+     */
+    class HttpError extends Error {
+      constructor(message, status) {
+        super(message);
+        this.name = "HttpError";
+        this.status = status;
+      }
+    }
+
+    /**
+     * 统一错误处理：根据错误类型生成友好文案
+     * Session 5：连续失败 2 次自动切换离线模式
+     */
+    let consecutiveFailures = 0;
+    function handleAnalysisError(err) {
+      consecutiveFailures++;
+      // 连续失败 2 次或健康检查已知不可用 → 自动切换离线模式
+      if (consecutiveFailures >= 2 || !apiAvailable) {
+        enableOfflineMode();
+        showToast("AI 服务暂不可用，已切换到离线演示模式", "error", 3500);
+        // 自动用模拟流程重跑
+        setTimeout(() => startAnalysis(), 800);
+        return;
+      }
+      let msg = "";
+      if (err.name === "AbortError") {
+        msg = "分析超时。AI 服务可能正在启动，请稍后重试 ⏳";
+      } else if (err.name === "NetworkError") {
+        msg = "无法连接到分析服务。请检查网络连接或稍后重试 🔌";
+      } else if (err instanceof HttpError) {
+        switch (err.status) {
+          case 413: msg = "图片文件过大，请上传小于 25MB 的图片"; break;
+          case 400: msg = "图片格式不支持，请上传 JPG/PNG/WebP 格式的鱼眼照片"; break;
+          case 503: msg = "模型服务正在启动中，请稍后重试（预计 30 秒）"; break;
+          default: msg = `服务器错误（状态码 ${err.status}），请稍后重试`;
+        }
+      } else {
+        msg = `分析失败：${err.message || "未知错误"}`;
+      }
+      showError(msg);
+    }
+
+    // ---- Session 5：离线演示模式 ----
+    let offlineMode = false;
+    function enableOfflineMode() {
+      offlineMode = true;
+      apiAvailable = false;
+      if (offlineBanner) offlineBanner.hidden = false;
+    }
+
+    /**
+     * 离线模式模拟分析流程（2-3s 延迟 + 随机合理结果）
+     */
+    function simulateAnalysis() {
+      return new Promise((resolve) => {
+        const delay = 2000 + Math.random() * 1000;
+        setTimeout(() => {
+          const results = [
+            {
+              freshness_level: "高度新鲜",
+              freshness_label: 0,
+              confidence_score: 0.9785,
+              all_probabilities: { "高度新鲜": 0.9785, "新鲜": 0.0183, "不新鲜": 0.0032 },
+              description: "鱼眼清澈明亮，角膜透明，瞳孔清晰可见，表面有自然光泽。综合判断为高度新鲜。",
+              timestamp: new Date().toISOString(),
+            },
+            {
+              freshness_level: "新鲜",
+              freshness_label: 1,
+              confidence_score: 0.8234,
+              all_probabilities: { "高度新鲜": 0.1023, "新鲜": 0.8234, "不新鲜": 0.0743 },
+              description: "鱼眼基本清澈，角膜略有浑浊，整体新鲜度良好。建议尽快食用。",
+              timestamp: new Date().toISOString(),
+            },
+            {
+              freshness_level: "不新鲜",
+              freshness_label: 2,
+              confidence_score: 0.9102,
+              all_probabilities: { "高度新鲜": 0.0015, "新鲜": 0.0883, "不新鲜": 0.9102 },
+              description: "鱼眼浑浊，角膜不透明，表面失去光泽。建议谨慎对待，不建议食用。",
+              timestamp: new Date().toISOString(),
+            },
+          ];
+          const idx = Math.floor(Math.random() * 3);
+          resolve({ prediction: results[idx], heatmap_image: null, simulated: true });
+        }, delay);
+      });
+    }
+
+    /**
+     * 显示错误信息（结果区恢复空态 + toast）
+     */
+    function showError(message) {
+      showToast(message, "error", 5000);
+      hideLoading();
+      resultsPanel.classList.remove("results-visible");
+      resultsPanel.classList.add("results-hidden");
+      resultsEmpty.style.display = "block";
+      if (resultHint) resultHint.textContent = "分析失败，请重试";
+    }
+
+    // ---- 结果渲染 ----
+
+    /**
+     * 用 API 返回数据填充结果面板各子区域
+     * Session 5：数值边界校验（NaN/undefined/越界统一为 0 或 "--"）
+     * @param {object} data API 返回 JSON
+     * @param {number} [durationSec] 分析耗时（秒）
+     */
+    function updateResults(data, durationSec) {
+      const pred = data?.prediction || {};
+      const heatmapBase64 = data?.heatmap_image || "";
+      const isSimulated = !!data?.simulated;
+      const level = pred.freshness_level || "未知";
+      // 数值安全化：非有限数 → -1 / 0
+      const safeNum = (v) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+      let label = typeof pred.freshness_label === "number" ? pred.freshness_label : -1;
+      if (![0, 1, 2].includes(label)) label = -1;
+      let confidence = safeNum(pred.confidence_score);
+      confidence = Math.max(0, Math.min(1, confidence)); // 强制 0-1 范围
+      const probs = pred.all_probabilities || {};
+      const description = pred.description || "暂无描述";
+
+      updateFreshnessCard(level, label, confidence, isSimulated);
+      updateConfidenceGauge(confidence);
+      updateProbabilityBars(probs);
+      updateComparisonView(heatmapBase64);
+      updateDescription(description, confidence);
+      updateRecommendations(label, confidence);
+      updateMetrics(pred, durationSec);
+
+      resultsPanel.classList.remove("results-hidden");
+      resultsPanel.classList.add("results-visible");
+      stopScanning();
+    }
+
+    /**
+     * 更新新鲜度等级卡片（文字 + 颜色）
+     * Session 5：离线模式追加 [模拟数据] 标签
+     */
+    function updateFreshnessCard(level, label, confidence, isSimulated) {
+      const cls = label === 0 ? "freshness-high" : label === 1 ? "freshness-mid" : label === 2 ? "freshness-low" : "freshness-mid";
+      freshnessCard.classList.remove("freshness-high", "freshness-mid", "freshness-low");
+      freshnessCard.classList.add(cls);
+      const simTag = isSimulated ? ` <span class="sim-tag">模拟数据</span>` : "";
+      freshnessLabel.innerHTML = `${level}${simTag}`;
+      const pct = (confidence * 100).toFixed(1);
+      freshnessMeta.textContent = `置信度 ${pct}% · 基于 FishFreshNetV1`;
+    }
+
+    /**
+     * 更新置信度环形仪表盘（SVG stroke-dashoffset + countUp）
+     */
+    function updateConfidenceGauge(score) {
+      const CIRC = 2 * Math.PI * 52; // 周长 ≈ 326.7
+      const clamped = Math.max(0, Math.min(1, score));
+      const offset = CIRC * (1 - clamped);
+      gaugeProgress.setAttribute("stroke-dashoffset", offset.toFixed(2));
+      gaugeWrap.setAttribute("data-confidence", String(clamped));
+
+      // 根据分数切换渐变
+      let gradId = "gaugeGrad";
+      if (clamped >= 0.8) gradId = "gaugeGradHigh";
+      else if (clamped >= 0.5) gradId = "gaugeGradMid";
+      else gradId = "gaugeGradLow";
+      gaugeProgress.setAttribute("stroke", `url(#${gradId})`);
+
+      // 数字 countUp 动画
+      if (clamped === 0) {
+        gaugeNum.textContent = "N/A";
+      } else {
+        animateNumber(gaugeNum, 0, clamped * 100, 1000, (v) => `${v.toFixed(1)}%`);
+      }
+    }
+
+    /**
+     * 通用数字滚动动画
+     */
+    function animateNumber(el, from, to, duration, formatter) {
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const val = from + (to - from) * eased;
+        el.textContent = formatter(val);
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.textContent = formatter(to);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    /**
+     * 更新三类概率分布条
+     */
+    function updateProbabilityBars(probs) {
+      const map = { "高度新鲜": { bar: probBarHigh, val: probValHigh }, "新鲜": { bar: probBarMid, val: probValMid }, "不新鲜": { bar: probBarLow, val: probValLow } };
+      for (const [name, els] of Object.entries(map)) {
+        const p = typeof probs[name] === "number" ? probs[name] : 0;
+        const pct = (p * 100).toFixed(1);
+        els.bar.style.width = `${pct}%`;
+        els.val.textContent = `${pct}%`;
+      }
+    }
+
+    /**
+     * 更新原图 vs 热力图对比区（Session 4：滑块结构）
+     * Session 5：离线模式叠加 CSS 模拟热力图
+     */
+    function updateComparisonView(heatmapBase64) {
+      if (compareOriginal && selectedFileDataURL) compareOriginal.src = selectedFileDataURL;
+      if (heatmapBase64 && compareHeatmap) {
+        // 真实热力图（base64）
+        compareHeatmap.src = `data:image/jpeg;base64,${heatmapBase64}`;
+        compareHeatmap.style.display = "block";
+        // 移除可能的模拟热力图层
+        compOverlay?.querySelector(".simulated-heatmap")?.remove();
+        if (compOverlay) compOverlay.style.display = "block";
+        if (compHandle) compHandle.style.display = "block";
+        setSliderPos(50);
+      } else if (offlineMode && compOverlay) {
+        // 离线模式：叠加 CSS 径向渐变模拟热力图
+        compareHeatmap.style.display = "none";
+        compOverlay.querySelector(".simulated-heatmap")?.remove();
+        const sim = document.createElement("div");
+        sim.className = "simulated-heatmap";
+        compOverlay.appendChild(sim);
+        compOverlay.style.display = "block";
+        if (compHandle) compHandle.style.display = "block";
+        setSliderPos(50);
+      } else {
+        if (compareHeatmap) compareHeatmap.style.display = "none";
+        if (compOverlay) compOverlay.style.display = "none";
+        if (compHandle) compHandle.style.display = "none";
+      }
+    }
+
+    /**
+     * 设置对比滑块位置（百分比 0-100）
+     */
+    function setSliderPos(pct) {
+      const p = Math.max(0, Math.min(100, pct));
+      if (compOverlay) compOverlay.style.clipPath = `inset(0 ${100 - p}% 0 0)`;
+      if (compHandle) compHandle.style.left = `${p}%`;
+    }
+
+    /**
+     * 初始化对比滑块拖动（pointer events 统一桌面/移动端）
+     */
+    function initCompareSlider() {
+      if (!compareSlider || !compHandle) return;
+      let dragging = false;
+      const onMove = (clientX) => {
+        if (!dragging) return;
+        const rect = compareSlider.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const pct = (x / rect.width) * 100;
+        setSliderPos(pct);
+      };
+      const startDrag = (e) => {
+        dragging = true;
+        compHandle.classList.add("is-active");
+        // 立即定位到点击处
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        onMove(clientX);
+        e.preventDefault();
+      };
+      const stopDrag = () => {
+        dragging = false;
+        compHandle.classList.remove("is-active");
+      };
+      // 拖动从手柄开始
+      compHandle.addEventListener("pointerdown", startDrag);
+      // 点击滑块任意位置也可跳转
+      compareSlider.addEventListener("pointerdown", startDrag);
+      window.addEventListener("pointermove", (e) => onMove(e.clientX));
+      window.addEventListener("pointerup", stopDrag);
+      window.addEventListener("pointercancel", stopDrag);
+    }
+
+    /**
+     * 更新结构化描述（带置信度前缀）
+     */
+    function updateDescription(desc, confidence) {
+      let prefix = "";
+      if (confidence >= 0.8) prefix = "✅ 高置信度分析结果：";
+      else if (confidence >= 0.5) prefix = "⚠️ 中置信度分析结果：";
+      else prefix = "❌ 低置信度分析结果，建议重新拍摄：";
+      descQuote.textContent = prefix + desc;
+    }
+
+    /**
+     * 根据新鲜度等级动态生成建议
+     */
+    function updateRecommendations(label, confidence) {
+      let store = "", eat = "", safe = "";
+      if (label === 0) {
+        store = "建议 0–4°C 冷藏保存，避免反复解冻。";
+        eat = "建议在 24–48 小时内食用以获得最佳口感。";
+        safe = "鱼眼清澈，可放心食用。";
+      } else if (label === 1) {
+        store = "建议 0–4°C 冷藏，如需长期保存请冷冻。";
+        eat = "建议在 12–24 小时内食用。";
+        safe = "鱼眼基本清澈，可正常食用。";
+      } else if (label === 2) {
+        store = "不建议继续储存。";
+        eat = "不建议食用，可能存在食品安全风险。";
+        safe = "鱼眼浑浊，请谨慎对待。";
+      } else {
+        store = "暂无建议。";
+        eat = "暂无建议。";
+        safe = "暂无建议。";
+      }
+      adviceStore.textContent = store;
+      adviceEat.textContent = eat;
+      adviceSafe.textContent = safe;
+
+      // 低置信度额外提示
+      const existing = adviceGrid.querySelector(".advice-low-conf");
+      if (confidence < 0.5 && !existing) {
+        const card = document.createElement("div");
+        card.className = "advice-card advice-low-conf";
+        card.style.borderColor = "rgba(239,91,91,0.4)";
+        card.innerHTML = `<div class="advice-head"><span class="advice-icon safe" aria-hidden="true">⚠</span><span class="advice-title">置信度提示</span></div><p class="advice-text">本结果置信度较低，建议重新拍摄清晰的鱼眼照片后再次分析。</p>`;
+        adviceGrid.appendChild(card);
+      } else if (confidence >= 0.5 && existing) {
+        existing.remove();
+      }
+    }
+
+    /**
+     * 重置所有状态：清除预览、隐藏结果、回到初始态
+     */
+    function resetAll() {
+      clearImage();
+      hideLoading();
+      resultsPanel.classList.remove("results-visible");
+      resultsPanel.classList.add("results-hidden");
+      resultsEmpty.style.display = "block";
+      if (resultHint) resultHint.textContent = "上传后将在此展示";
+      const lowConf = adviceGrid?.querySelector(".advice-low-conf");
+      if (lowConf) lowConf.remove();
+      resetAnalyzeButton();
+    }
+
+    // ============================================================
+    //  Session 4：Tab 切换 / 手风琴 / 历史记录 / 收藏 / 导出 / 引导
+    // ============================================================
+
+    const HISTORY_KEY = "fish-agent-history";
+    const FAVORITES_KEY = "fish-agent-favorites";
+    const ONBOARDING_KEY = "fish-agent-onboarded";
+    const MAX_HISTORY = 20;
+    let analysisStartTime = 0; // 记录分析开始时间戳
+
+    // ---- Tab 切换 ----
+    function initTabs() {
+      const tabs = document.querySelectorAll(".report-tab");
+      const panes = document.querySelectorAll(".report-tabpane");
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.dataset.tab;
+          tabs.forEach((t) => {
+            t.classList.toggle("is-active", t === tab);
+            t.setAttribute("aria-selected", t === tab ? "true" : "false");
+          });
+          panes.forEach((p) => {
+            p.classList.toggle("is-active", p.dataset.pane === target);
+          });
+        });
+      });
+    }
+
+    // ---- 手风琴折叠 ----
+    function initAccordion() {
+      document.querySelectorAll(".accordion-head").forEach((head) => {
+        head.addEventListener("click", () => {
+          const acc = head.parentElement;
+          acc.classList.toggle("is-open");
+        });
+      });
+    }
+
+    // ---- 历史记录存储 ----
+    // Session 5：localStorage 不可用时（隐私模式）降级为内存存储
+    let memoryStore = { history: null, favorites: null };
+    function lsGet(key) {
+      try { return localStorage.getItem(key); }
+      catch (_) { return memoryStore[key === HISTORY_KEY ? "history" : "favorites"]; }
+    }
+    function lsSet(key, val) {
+      try {
+        localStorage.setItem(key, val);
+      } catch (_) {
+        memoryStore[key === HISTORY_KEY ? "history" : "favorites"] = val;
+      }
+    }
+    function loadHistory() {
+      try { return JSON.parse(lsGet(HISTORY_KEY) || "[]"); }
+      catch (_) { return []; }
+    }
+    function saveHistory(arr) {
+      lsSet(HISTORY_KEY, JSON.stringify(arr));
+    }
+    function loadFavorites() {
+      try { return JSON.parse(lsGet(FAVORITES_KEY) || "[]"); }
+      catch (_) { return []; }
+    }
+    function saveFavorites(arr) {
+      lsSet(FAVORITES_KEY, JSON.stringify(arr));
+    }
+
+    /**
+     * 生成 UUID v4
+     */
+    function uuid() {
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+
+    /**
+     * 将图片缩略图压缩为 base64（Canvas 150×150, JPEG q=0.5, <50KB）
+     */
+    function compressThumbnail(dataUrl) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = 150;
+          canvas.height = 150;
+          const ctx = canvas.getContext("2d");
+          // 居中裁剪
+          const minSide = Math.min(img.naturalWidth, img.naturalHeight);
+          const sx = (img.naturalWidth - minSide) / 2;
+          const sy = (img.naturalHeight - minSide) / 2;
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, 150, 150);
+          resolve(canvas.toDataURL("image/jpeg", 0.5));
+        };
+        img.onerror = () => resolve("");
+        img.src = dataUrl;
+      });
+    }
+
+    /**
+     * 添加一条历史记录（自动裁剪到 MAX_HISTORY）
+     */
+    async function addHistoryRecord(data, durationSec) {
+      const pred = data?.prediction || {};
+      const thumb = await compressThumbnail(selectedFileDataURL || "");
+      const record = {
+        id: uuid(),
+        timestamp: pred.timestamp || new Date().toISOString(),
+        freshnessLevel: pred.freshness_level || "未知",
+        freshnessLabel: typeof pred.freshness_label === "number" ? pred.freshness_label : -1,
+        confidenceScore: typeof pred.confidence_score === "number" ? pred.confidence_score : 0,
+        probabilities: pred.all_probabilities || {},
+        description: pred.description || "",
+        thumbnail: thumb,
+        heatmapThumbnail: data?.heatmap_image || "",
+        processingTime: durationSec,
+      };
+      const hist = loadHistory();
+      hist.unshift(record);
+      // 裁剪到最新 MAX_HISTORY 条
+      if (hist.length > MAX_HISTORY) hist.length = MAX_HISTORY;
+      saveHistory(hist);
+      renderHistory();
+      return record;
+    }
+
+    /**
+     * 删除一条历史记录
+     */
+    function deleteHistory(id) {
+      const hist = loadHistory().filter((r) => r.id !== id);
+      saveHistory(hist);
+      // 同步删除收藏
+      const favs = loadFavorites().filter((fid) => fid !== id);
+      saveFavorites(favs);
+      renderHistory();
+    }
+
+    /**
+     * 切换收藏
+     */
+    function toggleFavorite(id) {
+      let favs = loadFavorites();
+      if (favs.includes(id)) {
+        favs = favs.filter((fid) => fid !== id);
+      } else {
+        favs.push(id);
+      }
+      saveFavorites(favs);
+      renderHistory();
+    }
+
+    /**
+     * 格式化时间为本地可读字符串
+     */
+    function formatHistoryTime(iso) {
+      try {
+        const d = new Date(iso);
+        return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      } catch (_) { return "—"; }
+    }
+
+    /**
+     * 渲染历史记录列表
+     */
+    function renderHistory() {
+      if (!historyList) return;
+      const hist = loadHistory();
+      const favs = loadFavorites();
+      const onlyFav = favFilter?.checked;
+      const filtered = onlyFav ? hist.filter((r) => favs.includes(r.id)) : hist;
+
+      if (filtered.length === 0) {
+        historyList.innerHTML = `<div class="history-empty">${onlyFav ? "暂无收藏记录" : "暂无历史记录，上传第一张鱼眼照片开始分析吧！"}</div>`;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      const favSet = new Set(favs);
+      filtered.forEach((r) => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.dataset.id = r.id;
+        const cls = r.freshnessLabel === 0 ? "high" : r.freshnessLabel === 1 ? "mid" : r.freshnessLabel === 2 ? "low" : "mid";
+        const conf = (r.confidenceScore * 100).toFixed(1);
+        const isFav = favSet.has(r.id);
+        item.innerHTML = `
+          <img class="history-thumb" alt="缩略图" src="${r.thumbnail || ""}" loading="lazy" />
+          <div class="history-info">
+            <div class="history-row1">
+              <span class="history-badge ${cls}">${r.freshnessLevel}</span>
+              <span class="history-conf">${conf}%</span>
+            </div>
+            <div class="history-time">${formatHistoryTime(r.timestamp)}</div>
+          </div>
+          <div class="history-actions">
+            <button class="history-btn fav ${isFav ? "is-fav" : ""}" aria-label="收藏" data-act="fav">${isFav ? "★" : "☆"}</button>
+            <button class="history-btn del" aria-label="删除" data-act="del">🗑</button>
+          </div>
+        `;
+        frag.appendChild(item);
+      });
+      historyList.innerHTML = "";
+      historyList.appendChild(frag);
+    }
+
+    /**
+     * 从历史记录加载到结果面板
+     */
+    function loadHistoryToResults(id) {
+      const r = loadHistory().find((x) => x.id === id);
+      if (!r) return;
+      // 构造兼容 updateResults 的数据结构
+      const data = {
+        heatmap_image: r.heatmapThumbnail || "",
+        prediction: {
+          freshness_level: r.freshnessLevel,
+          freshness_label: r.freshnessLabel,
+          confidence_score: r.confidenceScore,
+          all_probabilities: r.probabilities,
+          description: r.description,
+          timestamp: r.timestamp,
+        },
+      };
+      // 历史记录没有原图 File，使用缩略图作为预览
+      selectedFileDataURL = r.thumbnail || "";
+      resultsEmpty.style.display = "none";
+      resultsPanel.classList.remove("results-hidden");
+      resultsPanel.classList.add("results-visible");
+      hideLoading();
+      updateResults(data);
+      setAnalyzeDone();
+      if (resultHint) resultHint.textContent = "历史记录 · " + formatHistoryTime(r.timestamp);
+      metricDuration.textContent = r.processingTime ? `${r.processingTime.toFixed(1)}s` : "—";
+      resultsSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ---- 历史记录事件委托 ----
+    function initHistoryEvents() {
+      if (!historyList) return;
+      historyList.addEventListener("click", (e) => {
+        const btn = e.target.closest(".history-btn");
+        const item = e.target.closest(".history-item");
+        if (!item) return;
+        const id = item.dataset.id;
+        if (btn) {
+          const act = btn.dataset.act;
+          if (act === "fav") toggleFavorite(id);
+          else if (act === "del") deleteHistory(id);
+        } else {
+          loadHistoryToResults(id);
+        }
+      });
+      favFilter?.addEventListener("change", renderHistory);
+    }
+
+    // ---- 导出 JSON ----
+    function exportJson() {
+      if (!lastAnalysisResult) {
+        showToast("暂无可导出的分析结果", "error");
+        return;
+      }
+      const payload = {
+        exportTime: new Date().toISOString(),
+        apiResult: lastAnalysisResult,
+        meta: {
+          freshnessLevel: lastAnalysisResult?.prediction?.freshness_level,
+          confidenceScore: lastAnalysisResult?.prediction?.confidence_score,
+          processingTime: lastAnalysisResult?.__processingTime,
+        },
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      a.href = url;
+      a.download = `Fish-Agent-分析报告-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("JSON 报告已导出", "success", 2000);
+    }
+
+    // ---- 导出截图（降级为打印） ----
+    function exportImage() {
+      if (!lastAnalysisResult) {
+        showToast("暂无可导出的分析结果", "error");
+        return;
+      }
+      showToast("即将打开打印对话框，可选择“另存为 PDF/图片”", "success", 2500);
+      setTimeout(() => window.print(), 600);
+    }
+
+    // ---- 新手引导 ----
+    function initOnboarding() {
+      if (localStorage.getItem(ONBOARDING_KEY)) return;
+      // 检查是否有历史记录
+      if (loadHistory().length > 0) {
+        localStorage.setItem(ONBOARDING_KEY, "1");
+        return;
+      }
+      if (onboardingTip) {
+        onboardingTip.hidden = false;
+        const dismiss = () => {
+          onboardingTip.hidden = true;
+          localStorage.setItem(ONBOARDING_KEY, "1");
+          document.removeEventListener("click", dismiss);
+          clearTimeout(timer);
+        };
+        const timer = setTimeout(dismiss, 5000);
+        document.addEventListener("click", dismiss, { once: true });
+      }
+    }
+
+    // ---- 更新结果面板的指标摘要 ----
+    function updateMetrics(pred, durationSec) {
+      const conf = typeof pred.confidence_score === "number" ? pred.confidence_score : 0;
+      metricConfidence.textContent = (conf * 100).toFixed(1) + "%";
+      metricDuration.textContent = durationSec ? `${durationSec.toFixed(1)}s${durationSec > 30 ? "（冷启动）" : ""}` : "—";
+      metricTime.textContent = formatHistoryTime(pred.timestamp || new Date().toISOString());
+      // 鱼眼外观摘要：从描述中截取前 12 字
+      const desc = pred.description || "";
+      metricAppearance.textContent = desc.slice(0, 10) || "—";
+      // 趋势预测 / 知识图谱
+      const label = typeof pred.freshness_label === "number" ? pred.freshness_label : -1;
+      const shelf = label === 0 ? "24–48 小时" : label === 1 ? "12–24 小时" : label === 2 ? "不建议储存" : "—";
+      if (shelfLife) shelfLife.textContent = shelf;
+      const knowledge = label === 0
+        ? "标准特征：角膜透明、瞳孔清晰、表面有自然光泽。当前样本匹配度高。"
+        : label === 1
+        ? "标准特征：角膜略浑浊、瞳孔尚可辨认。当前样本与中等新鲜特征匹配。"
+        : label === 2
+        ? "标准特征：角膜浑浊、瞳孔模糊、表面失去光泽。当前样本与不新鲜特征匹配。"
+        : "暂无知识图谱数据。";
+      if (knowledgeText) knowledgeText.textContent = knowledge;
+    }
+
+    // ============================================================
+    //  Session 5：汉堡菜单 / 键盘导航 / PWA / 文案
+    // ============================================================
+
+    // ---- 汉堡菜单（焦点陷阱 + Escape 关闭）----
+    function initHamburgerMenu() {
+      const toggle = document.getElementById("navToggle");
+      const overlay = document.getElementById("navOverlay");
+      if (!toggle || !overlay) return;
+      let lastFocused = null;
+
+      const openMenu = () => {
+        lastFocused = document.activeElement;
+        overlay.hidden = false;
+        toggle.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        // 焦点移入菜单
+        const firstLink = overlay.querySelector("a");
+        firstLink?.focus();
+        document.body.style.overflow = "hidden";
+      };
+      const closeMenu = () => {
+        overlay.hidden = true;
+        toggle.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
+        lastFocused?.focus();
+      };
+
+      toggle.addEventListener("click", () => {
+        overlay.hidden ? openMenu() : closeMenu();
+      });
+      // 点击链接后关闭
+      overlay.querySelectorAll("[data-close]").forEach((a) => {
+        a.addEventListener("click", closeMenu);
+      });
+      // Escape 关闭
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !overlay.hidden) closeMenu();
+      });
+      // 焦点陷阱：Tab 在菜单内循环
+      overlay.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab" || overlay.hidden) return;
+        const focusable = [...overlay.querySelectorAll("a, button")];
+        const idx = focusable.indexOf(document.activeElement);
+        if (e.shiftKey && idx === 0) {
+          e.preventDefault();
+          focusable[focusable.length - 1]?.focus();
+        } else if (!e.shiftKey && idx === focusable.length - 1) {
+          e.preventDefault();
+          focusable[0]?.focus();
+        }
+      });
+    }
+
+    // ---- 键盘导航：Tab 栏左右箭头切换 + 滑块箭头控制 ----
+    function initKeyboardNav() {
+      // Tab 栏：左右箭头切换
+      const tabs = [...document.querySelectorAll(".report-tab")];
+      tabs.forEach((tab, i) => {
+        tab.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            tabs[(i + 1) % tabs.length]?.focus();
+            tabs[(i + 1) % tabs.length]?.click();
+          } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            tabs[(i - 1 + tabs.length) % tabs.length]?.focus();
+            tabs[(i - 1 + tabs.length) % tabs.length]?.click();
+          }
+        });
+      });
+      // 滑块：左右箭头微调位置
+      if (compHandle) {
+        compHandle.setAttribute("tabindex", "0");
+        compHandle.setAttribute("role", "slider");
+        compHandle.setAttribute("aria-label", "对比滑块");
+        compHandle.addEventListener("keydown", (e) => {
+          const cur = parseFloat(getComputedStyle(compHandle).left) || 50;
+          if (e.key === "ArrowLeft") { setSliderPos(cur - 5); e.preventDefault(); }
+          else if (e.key === "ArrowRight") { setSliderPos(cur + 5); e.preventDefault(); }
+        });
+      }
+    }
+
+    // ---- PWA：动态 manifest 注入 + Service Worker 探测 ----
+    function initPWA() {
+      try {
+        const manifest = {
+          name: "Fish-Agent - 水产品新鲜度智能评估",
+          short_name: "Fish-Agent",
+          description: "AI 鱼眼新鲜度检测工具",
+          start_url: ".",
+          display: "standalone",
+          background_color: "#04162b",
+          theme_color: "#04162b",
+          orientation: "any",
+          icons: [],
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = URL.createObjectURL(blob);
+        document.head.appendChild(link);
+      } catch (_) { /* 静默忽略 */ }
+      if ("serviceWorker" in navigator) {
+        console.log("📦 PWA: Service Worker 支持已就绪");
+      }
+    }
+
+    // ============ 初始化 ============
+    document.addEventListener("DOMContentLoaded", () => {
+      initCountUp();
+      initBubbles();
+      initParallax();
+      initReveal();
+      // Session 3：健康检查预热（不阻塞页面）
+      checkApiHealth();
+      // 分析按钮点击
+      if (analyzeBtn) {
+        analyzeBtn.addEventListener("click", () => {
+          if (!analyzeBtn.disabled) startAnalysis();
+        });
+      }
+      // Session 4
+      initTabs();
+      initAccordion();
+      initCompareSlider();
+      initHistoryEvents();
+      renderHistory();
+      initOnboarding();
+      exportJsonBtn?.addEventListener("click", exportJson);
+      exportImgBtn?.addEventListener("click", exportImage);
+      // Session 5
+      initHamburgerMenu();
+      initKeyboardNav();
+      initPWA();
+    });
+  </script>
+</body>
+</html>
