@@ -15,6 +15,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://yance77777.github.io/Fish-Agent-Demo/" />
 <meta name="twitter:card" content="summary" />
+<link rel="canonical" href="https://yance77777.github.io/Fish-Agent-Demo/" />
 <title>Fish-Agent · 水产品新鲜度智能评估</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -89,9 +90,9 @@
       </div>
     </div>
     <nav class="nav-links" aria-label="主导航">
-      <a href="#home">首页</a>
+      <a href="#home" class="is-current" aria-current="page">首页</a>
       <a href="about.html">关于</a>
-      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener">开源</a>
+      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener noreferrer">开源</a>
     </nav>
     <button class="nav-toggle" id="navToggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navOverlay">
       <span class="nav-toggle-bar"></span>
@@ -103,9 +104,9 @@
   <!-- 移动端全屏导航遮罩 -->
   <div class="nav-overlay" id="navOverlay" hidden>
     <nav class="nav-overlay-links" aria-label="移动端导航">
-      <a href="#home" data-close>首页</a>
+      <a href="#home" class="is-current" aria-current="page" data-close>首页</a>
       <a href="about.html" data-close>关于</a>
-      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener" data-close>开源</a>
+      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener noreferrer" data-close>开源</a>
     </nav>
   </div>
 
@@ -751,9 +752,6 @@
     const probValHigh = document.getElementById("probValHigh");
     const probValMid = document.getElementById("probValMid");
     const probValLow = document.getElementById("probValLow");
-    const adviceStore = document.getElementById("adviceStore");
-    const adviceEat = document.getElementById("adviceEat");
-    const adviceSafe = document.getElementById("adviceSafe");
     const adviceGrid = document.getElementById("adviceGrid");
     const descQuote = document.getElementById("descQuote");
     const resultHint = document.getElementById("resultHint");
@@ -773,7 +771,6 @@
     const knowledgeText = document.getElementById("knowledgeText");
     const historyList = document.getElementById("historyList");
     const historyEmpty = document.getElementById("historyEmpty");
-    const favFilter = document.getElementById("favFilter");
     const exportJsonBtn = document.getElementById("exportJsonBtn");
     const exportImgBtn = document.getElementById("exportImgBtn");
     const onboardingTip = document.getElementById("onboardingTip");
@@ -804,7 +801,12 @@
       const toast = document.createElement("div");
       toast.className = `toast is-${type}`;
       toast.setAttribute("role", "alert");
-      toast.innerHTML = `<span class="toast-dot"></span><span>${message}</span>`;
+      const dot = document.createElement("span");
+      dot.className = "toast-dot";
+      const msg = document.createElement("span");
+      msg.textContent = message;
+      toast.appendChild(dot);
+      toast.appendChild(msg);
       toastContainer.appendChild(toast);
 
       setTimeout(() => {
@@ -844,36 +846,6 @@
       }
       selectedFile = file;
       showPreview(file);
-    }
-
-    /**
-     * Session 7：创建优化预览图（压缩到 800px 宽，仅用于未来优化）
-     * 当前 showPreview 仍使用 FileReader，此函数预留给后续切换
-     */
-    async function createOptimizedPreview(file) {
-      try {
-        const bitmap = await createImageBitmap(file);
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const maxWidth = 800;
-        const scale = Math.min(1, maxWidth / bitmap.width);
-        canvas.width = bitmap.width * scale;
-        canvas.height = bitmap.height * scale;
-        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        return new Promise((resolve) => {
-          canvas.toBlob((blob) => {
-            resolve({
-              previewUrl: blob ? URL.createObjectURL(blob) : null,
-              width: canvas.width,
-              height: canvas.height,
-              originalSize: file.size,
-              compressedSize: blob ? blob.size : 0
-            });
-          }, 'image/jpeg', 0.85);
-        });
-      } catch (_) {
-        return { previewUrl: null, width: 0, height: 0, originalSize: file.size, compressedSize: 0 };
-      }
     }
 
     /**

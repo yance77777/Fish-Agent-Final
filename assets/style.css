@@ -158,6 +158,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .nav-links a:hover { color: var(--foam); }
 .nav-links a:hover::after { width: 100%; }
+.nav-links a.is-current { color: var(--aqua); }
+.nav-links a.is-current::after { width: 100%; }
 
 /* ============ 主容器 ============ */
 main {
@@ -213,9 +215,7 @@ section { margin-bottom: var(--space-7); }
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.08); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .hero-eye, .hero-eye-wrap::before { animation: none; }
-}
+/* prefers-reduced-motion 统一处理见底部 Session 5 区块 */
 .hero-title {
   font-family: "Orbitron", var(--font-stack);
   font-size: clamp(40px, 8vw, 72px);
@@ -1705,14 +1705,19 @@ footer {
   50%      { transform: translateX(-50%) translateY(6px); }
 }
 
-/* ============ 打印优化（导出截图降级） ============ */
+/* ============ 打印优化（导出截图降级 + Session 5 扩展） ============ */
 @media print {
   body { background: white !important; color: black !important; }
-  .bg-layer, .nav-bar, .hero, .upload-section, .intro-section, footer, .preview-card, .report-toolbar, .history-section, .analyze-actions { display: none !important; }
+  .bg-layer, .nav-bar, .navbar, .hero, .upload-section, .intro-section, footer, .competition-footer,
+  .preview-card, .report-toolbar, .history-section, .analyze-actions,
+  .nav-toggle, .nav-overlay, .offline-banner, .report-tabs, .skeleton-wrap { display: none !important; }
   .results { color: black !important; }
+  .report-tabpane { display: block !important; }
   .panel, .freshness-card, .advice-card, .metric-item, .accordion { background: white !important; border: 1px solid #ccc !important; box-shadow: none !important; }
   .freshness-label, .panel-title, .gauge-num, .history-title { color: black !important; }
   .prob-fill { background: #27d0c4 !important; }
+  .results-grid, .advice-grid, .metrics-row { grid-template-columns: 1fr 1fr; }
+  .competition-footer { color: #555 !important; }
 }
 
 @media (max-width: 768px) {
@@ -1720,11 +1725,7 @@ footer {
 }
 
 /* ============ Session 5：全局焦点样式 ============ */
-:focus-visible {
-  outline: 2px solid var(--aqua);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+/* :focus-visible 基础规则见顶部重置区块 */
 /* 所有可点击元素防双击缩放 */
 button, a, .upload-zone, .report-tab, .history-item, .accordion-head, .comp-handle {
   touch-action: manipulation;
@@ -1898,14 +1899,6 @@ button, a, .upload-zone, .report-tab, .history-item, .accordion-head, .comp-hand
   }
   .bubble, .wave, .glow { display: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; }
-}
-
-/* ============ Session 5：打印优化扩展 ============ */
-@media print {
-  .nav-toggle, .nav-overlay, .offline-banner, .report-tabs, .skeleton-wrap, .analyze-actions { display: none !important; }
-  .report-tabpane { display: block !important; }
-  .results-grid, .advice-grid, .metrics-row { grid-template-columns: 1fr 1fr; }
-  .competition-footer { color: #555 !important; }
 }
 
 /* ============ 介绍区 (#intro) ============ */
