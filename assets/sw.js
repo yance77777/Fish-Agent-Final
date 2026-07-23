@@ -1,14 +1,17 @@
 /* ============ Fish-Agent Service Worker ============ */
 /* 真实离线缓存：缓存优先，网络回退，不拦截 API 请求 */
 
-const CACHE_NAME = 'fish-agent-v1';
+const CACHE_NAME = 'fish-agent-v2';
 const CACHE_URLS = [
   './',
   './index.html',
   './about.html',
   './404.html',
   './assets/style.css',
-  './assets/manifest.json'
+  './assets/manifest.json',
+  './assets/samples/highly-fresh.png',
+  './assets/samples/fresh.png',
+  './assets/samples/not-fresh.png'
 ];
 
 // 安装：预缓存核心资源

@@ -276,6 +276,28 @@
         <div class="onboarding-tip" id="onboardingTip" hidden>点击或拖拽鱼眼照片到此处 <span aria-hidden="true">📸</span></div>
       </div>
 
+      <!-- 内置示例图片选择 -->
+      <div class="sample-card" id="sampleCard">
+        <div class="sample-card-head">
+          <span class="sample-card-title">是否载入内置鱼眼照片</span>
+          <span class="sample-card-hint">没有鱼眼照片？试试这三张示例</span>
+        </div>
+        <div class="sample-grid">
+          <button class="sample-item" data-sample="highly-fresh" type="button">
+            <img src="assets/samples/highly-fresh.png" alt="高度新鲜鱼眼示例" loading="lazy" />
+            <span class="sample-label sample-label-high">高度新鲜</span>
+          </button>
+          <button class="sample-item" data-sample="fresh" type="button">
+            <img src="assets/samples/fresh.png" alt="新鲜鱼眼示例" loading="lazy" />
+            <span class="sample-label sample-label-mid">新鲜</span>
+          </button>
+          <button class="sample-item" data-sample="not-fresh" type="button">
+            <img src="assets/samples/not-fresh.png" alt="不新鲜鱼眼示例" loading="lazy" />
+            <span class="sample-label sample-label-low">不新鲜</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 预览区（上传后显示） -->
       <div id="previewCard" class="preview-card" aria-live="polite">
         <div class="preview-body">
@@ -949,6 +971,26 @@
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files?.[0];
       if (file) handleFileSelect(file);
+    });
+
+    // —— 内置示例图片选择 ——
+    document.querySelectorAll(".sample-item").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const img = btn.querySelector("img");
+        if (!img) return;
+        try {
+          const resp = await fetch(img.src);
+          const blob = await resp.blob();
+          const fileName = btn.dataset.sample + ".png";
+          const file = new File([blob], fileName, { type: "image/png" });
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+          fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+        } catch (err) {
+          showToast("示例图片加载失败，请重试", "error");
+        }
+      });
     });
 
     // —— 拖拽上传 ——

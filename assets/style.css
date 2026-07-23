@@ -436,6 +436,90 @@ section { margin-bottom: var(--space-7); }
   box-shadow: 0 10px 28px rgba(39, 208, 196, 0.45);
 }
 
+/* ============ 内置示例图片选择 ============ */
+.sample-card {
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.sample-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.sample-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--foam, #eaf6fb);
+}
+.sample-card-hint {
+  font-size: 12px;
+  color: var(--muted, #8aa4b8);
+}
+.sample-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.sample-item {
+  position: relative;
+  border: 2px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--card);
+  padding: 0;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+  aspect-ratio: 1;
+}
+.sample-item:hover {
+  border-color: var(--aqua, #27d0c4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 208, 196, 0.25);
+}
+.sample-item:focus-visible {
+  outline: 2px solid var(--aqua, #27d0c4);
+  outline-offset: 2px;
+}
+.sample-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sample-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: block;
+  text-align: center;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white, #fff);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.sample-label-high { background: rgba(39, 208, 196, 0.85); }
+.sample-label-mid { background: rgba(245, 181, 74, 0.85); }
+.sample-label-low { background: rgba(239, 84, 84, 0.85); }
+
+@media (max-width: 640px) {
+  .sample-card { padding: var(--space-4); }
+  .sample-card-head { flex-direction: column; gap: 2px; }
+  .sample-grid { gap: 8px; }
+  .sample-label { font-size: 11px; padding: 4px 2px; }
+}
+@media (max-width: 374px) {
+  .sample-grid { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .sample-label { font-size: 10px; }
+}
+
 /* ============ 预览区 ============ */
 .preview-card {
   display: none;
