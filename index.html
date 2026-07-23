@@ -2415,7 +2415,7 @@
       });
     });
 
-    // ============ Session 7：Service Worker 注册 + 安装提示 ============
+    // ============ Session 7：Service Worker 注册 ============
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./assets/sw.js')
@@ -2423,42 +2423,6 @@
           .catch((err) => console.warn('📦 PWA: SW 注册失败', err));
       });
     }
-
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      showInstallPrompt();
-    });
-
-    function showInstallPrompt() {
-      // 已显示过或已安装则跳过
-      if (document.querySelector('.install-banner')) return;
-      if (window.matchMedia('(display-mode: standalone)').matches) return;
-      const banner = document.createElement('div');
-      banner.className = 'install-banner';
-      banner.innerHTML = `
-        <span>📱 安装 Fish-Agent 到桌面，随时检测鱼眼新鲜度</span>
-        <button id="installBtn" class="btn-install">安装</button>
-        <button id="dismissBtn" class="btn-dismiss">稍后</button>
-      `;
-      document.body.appendChild(banner);
-
-      document.getElementById('installBtn').addEventListener('click', async () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          deferredPrompt = null;
-          banner.remove();
-        }
-      });
-      document.getElementById('dismissBtn').addEventListener('click', () => banner.remove());
-    }
-
-    window.addEventListener('appinstalled', () => {
-      document.querySelector('.install-banner')?.remove();
-      deferredPrompt = null;
-    });
 
     // ============ Session 10：全流程冒烟测试（开发调试用） ============
     function fishAgentSmokeTest() {

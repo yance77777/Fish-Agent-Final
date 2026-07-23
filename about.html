@@ -241,6 +241,124 @@
       </div>
     </section>
 
+    <!-- ============ FishFreshNetV1 模型架构详解 ============ -->
+    <section id="model-arch" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">FishFreshNetV1 模型架构</h2>
+      </div>
+      <div class="model-arch-content">
+        <p class="intro-sub">基于我撰写的论文，FishFreshNetV1 是一个轻量级且可解释的深度学习框架，专为鱼眼新鲜度分类任务设计。模型仅 <strong>4.22M</strong> 参数、<strong>0.41G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.23%</strong> 准确率。</p>
+
+        <!-- 架构总览 -->
+        <div class="model-flow">
+          <div class="model-flow-node">
+            <span class="model-flow-icon">📷</span>
+            <span class="model-flow-label">鱼眼图像<br/><small>224×224</small></span>
+          </div>
+          <div class="model-flow-arrow">→</div>
+          <div class="model-flow-node model-flow-core">
+            <span class="model-flow-icon">🧠</span>
+            <span class="model-flow-label">EfficientNet-B0<br/><small>特征提取骨干</small></span>
+          </div>
+          <div class="model-flow-arrow">→</div>
+          <div class="model-flow-node model-flow-core">
+            <span class="model-flow-icon">🎯</span>
+            <span class="model-flow-label">CBAM<br/><small>注意力机制</small></span>
+          </div>
+          <div class="model-flow-arrow">→</div>
+          <div class="model-flow-node">
+            <span class="model-flow-icon">📊</span>
+            <span class="model-flow-label">分类头<br/><small>3 类新鲜度</small></span>
+          </div>
+          <div class="model-flow-arrow model-flow-arrow-branch">→</div>
+          <div class="model-flow-node model-flow-aux">
+            <span class="model-flow-icon">🔥</span>
+            <span class="model-flow-label">Grad-CAM<br/><small>可解释热力图</small></span>
+          </div>
+        </div>
+
+        <!-- EfficientNet-B0 -->
+        <div class="model-section">
+          <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🧠</span> EfficientNet-B0 骨干网络</h3>
+          <p>鱼眼新鲜度评估是一个细粒度视觉分类任务，需要高精度且计算高效的神经网络来适配移动端部署。FishFreshNetV1 选用 <strong>EfficientNet-B0</strong> 作为基础架构，核心优势如下：</p>
+          <ul class="model-feature-list">
+            <li>
+              <strong>复合缩放方法（Compound Scaling）</strong>：EfficientNet 通过统一的复合系数 φ 同时缩放网络深度（depth）、宽度（width）和输入分辨率（resolution），三者协同优化而非单一维度扩展，在保持高精度的同时显著减少参数量。
+            </li>
+            <li>
+              <strong>MBConv 模块（Mobile Inverted Bottleneck Convolution）</strong>：作为 EfficientNet-B0 的基本构建单元，MBConv 采用深度可分离卷积 + 反残差结构（先升维→深度卷积→降维），在大幅降低计算量的同时保持高特征提取能力。
+            </li>
+            <li>
+              <strong>自定义分类头</strong>：移除 EfficientNet-B0 原始分类头，替换为自适应平均池化层（Adaptive Average Pooling）→ Dropout 层 → 线性全连接层，有效缓解训练过拟合并映射到三个新鲜度类别（高度新鲜 / 新鲜 / 不新鲜）。
+            </li>
+          </ul>
+        </div>
+
+        <!-- CBAM -->
+        <div class="model-section">
+          <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🎯</span> CBAM 注意力机制</h3>
+          <p>在实际检测场景中，鱼眼图像常包含大量无关信息（泡沫箱、光照变化、鱼鳞等）。为使网络聚焦于关键鱼眼区域，FishFreshNetV1 在 EfficientNet-B0 最后一个特征提取层之后（输入通道数 1280）集成了 <strong>CBAM（Convolutional Block Attention Module）</strong>。CBAM 是一个轻量级注意力模块，沿<strong>通道</strong>和<strong>空间</strong>两个维度依次推送注意力图：</p>
+
+          <div class="cbam-flow">
+            <div class="cbam-block">
+              <div class="cbam-block-title">通道注意力子模块</div>
+              <div class="cbam-block-desc">
+                <p>对特征图同时执行<strong>最大池化</strong>和<strong>平均池化</strong>，将两个池化结果输入共享的多层感知机（MLP）。MLP 通过先降维再升维的结构学习通道间依赖关系，输出通道注意力权重。</p>
+                <p class="cbam-effect">→ 帮助模型推断<strong>哪些特征通道</strong>真正具有判别力（如角膜浑浊度相关的特征通道）</p>
+              </div>
+            </div>
+            <div class="cbam-arrow">↓ 特征图 × 通道权重</div>
+            <div class="cbam-block">
+              <div class="cbam-block-title">空间注意力子模块</div>
+              <div class="cbam-block-desc">
+                <p>沿通道轴执行池化操作（最大池化 + 平均池化），生成 2 通道的聚合特征，再通过卷积层生成空间注意力图。</p>
+                <p class="cbam-effect">→ 引导网络聚焦<strong>瞳孔和角膜区域</strong>，抑制背景环境（砧板、纸张、泡沫箱）的干扰</p>
+              </div>
+            </div>
+            <div class="cbam-arrow">↓ 特征图 × 空间权重</div>
+            <div class="cbam-block cbam-output">
+              <div class="cbam-block-title">自适应特征精炼</div>
+              <div class="cbam-block-desc">
+                <p>两张注意力图分别与输入特征图相乘，实现通道和空间维度的自适应特征精炼，在模型体积与识别精度之间取得平衡。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grad-CAM -->
+        <div class="model-section">
+          <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🔥</span> Grad-CAM 可解释性</h3>
+          <p>为克服深度神经网络的"黑箱"问题，FishFreshNetV1 引入 <strong>Grad-CAM（Gradient-weighted Class Activation Mapping）</strong> 可视化技术：</p>
+          <ul class="model-feature-list">
+            <li>利用目标类别梯度流入 EfficientNet-B0 最后一个卷积层，生成粗粒度定位图</li>
+            <li>对梯度执行全局平均池化，计算每个特征通道的重要性权重</li>
+            <li>生成热力图，高亮对模型预测影响最大的图像空间区域</li>
+          </ul>
+          <p>论文实验表明：在<strong>正确分类</strong>的案例中，红色高激活区域精准聚焦于<strong>瞳孔和角膜</strong>；在<strong>错误分类</strong>的案例中，高激活区域偏移至眼周明亮鱼鳞或镜面反射光斑——这证实模型确实在依据生物学特征做判断，而非依赖背景捷径。</p>
+        </div>
+
+        <!-- 关键数据 -->
+        <div class="model-stats">
+          <div class="model-stat-item">
+            <span class="model-stat-num">4.22M</span>
+            <span class="model-stat-label">参数量</span>
+          </div>
+          <div class="model-stat-item">
+            <span class="model-stat-num">0.41G</span>
+            <span class="model-stat-label">FLOPs</span>
+          </div>
+          <div class="model-stat-item">
+            <span class="model-stat-num">99.23%</span>
+            <span class="model-stat-label">MFED 准确率</span>
+          </div>
+          <div class="model-stat-item">
+            <span class="model-stat-num">3.1%</span>
+            <span class="model-stat-label">VGG16 参数占比</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ 工作流（占位） ============ -->
     <section id="workflow" class="reveal">
       <div class="section-head">
