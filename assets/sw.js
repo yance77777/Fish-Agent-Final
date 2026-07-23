@@ -1,7 +1,7 @@
 /* ============ Fish-Agent Service Worker ============ */
-/* 真实离线缓存：缓存优先，网络回退，不拦截 API 请求 */
+/* 混合缓存策略：HTML 网络优先（确保最新版本），静态资源缓存优先 */
 
-const CACHE_NAME = 'fish-agent-v2';
+const CACHE_NAME = 'fish-agent-v3';
 const CACHE_URLS = [
   './',
   './index.html',
@@ -24,7 +24,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 激活：清理旧缓存
+// 激活：清理旧缓存并通知客户端接管
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 拦截请求：缓存优先，网络回退
+// 拦截请求：HTML 导航网络优先，静态资源缓存优先
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
 
@@ -46,23 +46,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // HTML 导航请求：网络优先，确保用户获取到最新版本
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', clone));
+          return response;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // 静态资源：缓存优先，网络回退
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) {
         return cached;
       }
       return fetch(event.request).then((response) => {
-        // 缓存新资源（同源且响应正常）
         if (response.status === 200 && new URL(url).origin === self.location.origin) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
       }).catch(() => {
-        // 网络失败且无缓存时，回退到首页（SPA 友好）
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
         return new Response('', { status: 504, statusText: 'Offline' });
       });
     })

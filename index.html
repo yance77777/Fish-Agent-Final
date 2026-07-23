@@ -1358,6 +1358,8 @@
       try {
         // Session 5：离线模式走模拟流程
         const data = offlineMode ? await simulateAnalysis() : await callPredictApiWithRetry(selectedFile);
+        // 统一用前端当前时间作为分析时间戳，避免后端时区格式不一致导致显示偏差
+        data.timestamp = new Date().toISOString();
         lastAnalysisResult = data;
         const durationSec = (performance.now() - analysisStartTime) / 1000;
         lastAnalysisResult.__processingTime = durationSec;
@@ -2080,7 +2082,7 @@
     }
 
     /**
-     * 格式化时间为本地可读字符串
+     * 格式化时间为本地可读字符串（北京时间 UTC+8）
      */
     const historyTimeFmt = new Intl.DateTimeFormat("zh-CN", {
       month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
@@ -2088,7 +2090,13 @@
     });
     function formatHistoryTime(iso) {
       try {
-        const d = new Date(iso);
+        if (!iso) return "—";
+        let str = String(iso);
+        // 若无时区标记（Z 或 +/-HH:MM），视为 UTC 时间补 Z 后缀，防止本地时区错误解析
+        if (!/[zZ]$/.test(str) && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+          str = str.replace(" ", "T") + "Z";
+        }
+        const d = new Date(str);
         if (isNaN(d.getTime())) return "—";
         return historyTimeFmt.format(d);
       } catch (_) { return "—"; }
