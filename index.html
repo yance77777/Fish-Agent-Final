@@ -278,20 +278,22 @@
 
       <!-- 内置示例图片选择 -->
       <div class="sample-card" id="sampleCard">
-        <div class="sample-card-head">
-          <span class="sample-card-title">是否载入内置鱼眼照片</span>
-          <span class="sample-card-hint">没有鱼眼照片？点击标签试试</span>
-        </div>
-        <div class="sample-grid">
-          <button class="sample-tag sample-tag-high" data-sample="highly-fresh" type="button">
-            <span class="sample-tag-dot"></span>高度新鲜
-          </button>
-          <button class="sample-tag sample-tag-mid" data-sample="fresh" type="button">
-            <span class="sample-tag-dot"></span>新鲜
-          </button>
-          <button class="sample-tag sample-tag-low" data-sample="not-fresh" type="button">
-            <span class="sample-tag-dot"></span>不新鲜
-          </button>
+        <div class="sample-card-inner">
+          <div class="sample-card-head">
+            <span class="sample-card-title">是否载入内置鱼眼照片</span>
+            <span class="sample-card-hint">没有鱼眼照片？点击标签试试</span>
+          </div>
+          <div class="sample-grid">
+            <button class="sample-tag sample-tag-high" data-sample="highly-fresh" type="button">
+              <span class="sample-tag-dot"></span>高度新鲜
+            </button>
+            <button class="sample-tag sample-tag-mid" data-sample="fresh" type="button">
+              <span class="sample-tag-dot"></span>新鲜
+            </button>
+            <button class="sample-tag sample-tag-low" data-sample="not-fresh" type="button">
+              <span class="sample-tag-dot"></span>不新鲜
+            </button>
+          </div>
         </div>
       </div>
 
@@ -874,6 +876,9 @@
     function showPreview(file) {
       // 切换到预览态
       uploadZone.style.display = "none";
+      // 隐藏内置示例卡片（上传自定义图片或载入内置图片时均触发）
+      const sc = document.getElementById("sampleCard");
+      if (sc) sc.classList.add("is-hidden");
       previewCard.classList.add("is-active");
 
       // 重置加载态
@@ -992,6 +997,8 @@
         sampleLoading = true;
         document.querySelectorAll(".sample-tag").forEach(b => b.disabled = true);
         const sampleName = btn.dataset.sample;
+        // 立即启动卡片消失动画，与图片加载并行
+        sampleCard.classList.add("is-hidden");
         try {
           let blob = sampleBlobCache[sampleName];
           if (!blob) {
@@ -1006,8 +1013,9 @@
           dt.items.add(file);
           fileInput.files = dt.files;
           fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-          sampleCard.classList.add("is-hidden");
         } catch (err) {
+          // 加载失败时恢复卡片显示
+          sampleCard.classList.remove("is-hidden");
           showToast("示例图片加载失败，请重试", "error");
         } finally {
           sampleLoading = false;

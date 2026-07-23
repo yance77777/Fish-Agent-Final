@@ -442,25 +442,34 @@ section { margin-bottom: var(--space-7); }
 /* ============ 内置示例图片选择 ============ */
 .sample-card {
   margin-top: var(--space-4);
-  padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-xl);
   background: var(--card);
   border: 1px solid var(--border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   overflow: hidden;
-  max-height: 200px;
+  display: grid;
+  grid-template-rows: 1fr;
   opacity: 1;
-  transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.4s ease, padding 0.4s ease, border-width 0.4s ease;
+  transform: translateY(0);
+  transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              margin-top 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-width 0.35s ease;
 }
 .sample-card.is-hidden {
-  max-height: 0;
+  grid-template-rows: 0fr;
   opacity: 0;
+  transform: translateY(-8px);
   margin-top: 0;
-  padding-top: 0;
-  padding-bottom: 0;
   border-width: 0;
   pointer-events: none;
+}
+.sample-card-inner {
+  overflow: hidden;
+  min-height: 0;
+  padding: var(--space-4) var(--space-5);
 }
 .sample-card-head {
   display: flex;
