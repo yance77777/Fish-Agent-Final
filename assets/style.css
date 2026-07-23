@@ -303,6 +303,24 @@ section { margin-bottom: var(--space-7); }
   color: var(--muted);
 }
 
+/* h3 级子标题（位于 section-title 之下）*/
+.section-subtitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--foam, #eaf6fb);
+  margin: 0 0 var(--space-3, 12px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-subtitle::before {
+  content: "";
+  width: 3px; height: 16px;
+  background: linear-gradient(180deg, var(--aqua, #27d0c4), var(--sea, #1185b8));
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 /* ============ 上传区域 ============ */
 .upload-zone {
   position: relative;
@@ -2281,6 +2299,7 @@ button, a, .upload-zone, .report-tab, .history-item,
   .upload-text { font-size: 14px; }
   .upload-meta { font-size: 11px; }
   .section-title { font-size: 17px; }
+  .section-subtitle { font-size: 15px; }
   .metric-val { font-size: 13px; }
   .metric-label { font-size: 10px; }
   .gauge { width: 100px; height: 100px; margin: 0 auto; }
@@ -2312,7 +2331,7 @@ button, a, .upload-zone, .report-tab, .history-item,
 /* 已由默认样式覆盖 */
 
 /* ============ FishFreshNetV1 模型架构样式 ============ */
-.model-arch-content { max-width: 760px; }
+.model-arch-content { max-width: 100%; }
 
 .model-flow {
   display: flex;
@@ -2485,6 +2504,31 @@ button, a, .upload-zone, .report-tab, .history-item,
   .model-flow-node { min-width: 56px; padding: 6px 8px; }
   .model-flow-label { font-size: 10px; }
   .model-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+
+/* ============ 参考文献列表 ============ */
+.ref-list {
+  list-style: decimal;
+  padding-left: 24px;
+  margin: 0;
+  counter-reset: ref-counter;
+}
+.ref-list li {
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted, #8aa4b8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.ref-list li:last-child { border-bottom: none; }
+.ref-list li em {
+  color: var(--foam, #eaf6fb);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .ref-list { padding-left: 20px; }
+  .ref-list li { font-size: 12px; }
 }
 
 /* ============ 焦点可见性（移动端辅助）============ */

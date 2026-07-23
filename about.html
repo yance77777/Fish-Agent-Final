@@ -14,10 +14,10 @@
 <meta property="og:title" content="Fish-Agent · 技术细节与创作历程" />
 <meta property="og:description" content="FishFreshNetV1 模型架构、LangGraph 16 节点工作流、MFED 数据集、Grad-CAM 可解释性、创作历程与社会价值。" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://yance77777.github.io/Fish-Agent-Demo/about.html" />
+<meta property="og:url" content="https://yance77777.github.io/Fish-Agent-Final/about.html" />
 <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3C/svg%3E" />
 <meta name="twitter:card" content="summary" />
-<link rel="canonical" href="https://yance77777.github.io/Fish-Agent-Demo/about.html" />
+<link rel="canonical" href="https://yance77777.github.io/Fish-Agent-Final/about.html" />
 <title>Fish-Agent · 技术细节与创作历程</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -133,7 +133,9 @@
 
     <!-- ============ 痛点 vs 解法 ============ -->
     <section id="pain-points" class="reveal">
-      <h2 class="intro-heading">痛点 vs 解法</h2>
+      <div class="section-head">
+        <h2 class="section-title">痛点 vs 解法</h2>
+      </div>
       <div class="compare-pain">
         <div class="pain-card pain">
           <div class="pain-card-head">
@@ -163,7 +165,9 @@
 
     <!-- ============ 三类用户 ============ -->
     <section id="users" class="reveal">
-      <h2 class="intro-heading">面向三类用户</h2>
+      <div class="section-head">
+        <h2 class="section-title">面向三类用户</h2>
+      </div>
       <div class="users-grid">
         <div class="user-card">
           <div class="user-icon" aria-hidden="true">🛒</div>
@@ -189,7 +193,7 @@
         <h2 class="section-title">方案对比</h2>
       </div>
       <div id="compareContent">
-        <h3 class="intro-heading">FishFreshNetV1 vs 主流模型</h3>
+        <h3 class="section-subtitle">FishFreshNetV1 vs 主流模型</h3>
         <p class="intro-sub">在 MFED（自建数据集）和 FFE（公开数据集）上的全面对比</p>
 
         <div class="table-wrap">
@@ -205,21 +209,21 @@
             </thead>
             <tbody>
               <tr>
-                <td>VGG16</td>
+                <td>VGG16<sup>[4]</sup></td>
                 <td>134.27</td>
                 <td>15.47</td>
                 <td>98.08%</td>
                 <td>77.40%</td>
               </tr>
               <tr>
-                <td>ResNet18</td>
+                <td>ResNet18<sup>[5]</sup></td>
                 <td>11.18</td>
                 <td>1.82</td>
                 <td>98.67%</td>
                 <td>79.36%</td>
               </tr>
               <tr>
-                <td>MobileNetV2</td>
+                <td>MobileNetV2<sup>[6]</sup></td>
                 <td>2.23</td>
                 <td>0.33</td>
                 <td>98.54%</td>
@@ -292,7 +296,7 @@
           <p>鱼眼新鲜度评估是一个细粒度视觉分类任务，需要高精度且计算高效的神经网络来适配移动端部署。FishFreshNetV1 选用 <strong>EfficientNet-B0</strong> 作为基础架构，核心优势如下：</p>
           <ul class="model-feature-list">
             <li>
-              <strong>复合缩放方法（Compound Scaling）</strong>：EfficientNet 通过统一的复合系数 φ 同时缩放网络深度（depth）、宽度（width）和输入分辨率（resolution），三者协同优化而非单一维度扩展，在保持高精度的同时显著减少参数量。
+              <strong>复合缩放方法（Compound Scaling）<sup>[1]</sup></strong>：EfficientNet 通过统一的复合系数 φ 同时缩放网络深度（depth）、宽度（width）和输入分辨率（resolution），三者协同优化而非单一维度扩展，在保持高精度的同时显著减少参数量。
             </li>
             <li>
               <strong>MBConv 模块（Mobile Inverted Bottleneck Convolution）</strong>：作为 EfficientNet-B0 的基本构建单元，MBConv 采用深度可分离卷积 + 反残差结构（先升维→深度卷积→降维），在大幅降低计算量的同时保持高特征提取能力。
@@ -306,7 +310,7 @@
         <!-- CBAM -->
         <div class="model-section">
           <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🎯</span> CBAM 注意力机制</h3>
-          <p>在实际检测场景中，鱼眼图像常包含大量无关信息（泡沫箱、光照变化、鱼鳞等）。为使网络聚焦于关键鱼眼区域，FishFreshNetV1 在 EfficientNet-B0 最后一个特征提取层之后（输入通道数 1280）集成了 <strong>CBAM（Convolutional Block Attention Module）</strong>。CBAM 是一个轻量级注意力模块，沿<strong>通道</strong>和<strong>空间</strong>两个维度依次推送注意力图：</p>
+          <p>在实际检测场景中，鱼眼图像常包含大量无关信息（泡沫箱、光照变化、鱼鳞等）。为使网络聚焦于关键鱼眼区域，FishFreshNetV1 在 EfficientNet-B0 最后一个特征提取层之后（输入通道数 1280）集成了 <strong>CBAM（Convolutional Block Attention Module）<sup>[2]</sup></strong>。CBAM 是一个轻量级注意力模块，沿<strong>通道</strong>和<strong>空间</strong>两个维度依次推送注意力图：</p>
 
           <div class="cbam-flow">
             <div class="cbam-block">
@@ -337,7 +341,7 @@
         <!-- Grad-CAM -->
         <div class="model-section">
           <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🔥</span> Grad-CAM 可解释性</h3>
-          <p>为克服深度神经网络的"黑箱"问题，FishFreshNetV1 引入 <strong>Grad-CAM（Gradient-weighted Class Activation Mapping）</strong> 可视化技术：</p>
+          <p>为克服深度神经网络的"黑箱"问题，FishFreshNetV1 引入 <strong>Grad-CAM（Gradient-weighted Class Activation Mapping）<sup>[3]</sup></strong> 可视化技术：</p>
           <ul class="model-feature-list">
             <li>利用目标类别梯度流入 EfficientNet-B0 最后一个卷积层，生成粗粒度定位图</li>
             <li>对梯度执行全局平均池化，计算每个特征通道的重要性权重</li>
@@ -374,7 +378,7 @@
         <h2 class="section-title">LangGraph 16 节点工作流</h2>
       </div>
       <div id="workflowContent">
-        <h3 class="intro-heading">LangGraph 16 节点智能体工作流</h3>
+        <h3 class="section-subtitle">LangGraph 16 节点智能体工作流</h3>
         <p class="intro-sub">14 个逻辑步骤 · 16 个实际节点 · 置信度驱动的自适应分支</p>
 
         <!-- 拓扑图 -->
@@ -483,7 +487,7 @@
         </div>
 
         <!-- 节点职责表 -->
-        <h3 class="intro-heading" style="margin-top:32px;">16 节点职责明细</h3>
+        <h3 class="section-subtitle" style="margin-top:32px;">16 节点职责明细</h3>
         <div class="table-wrap">
           <table class="compare-table">
             <thead>
@@ -565,7 +569,7 @@
     </section>
     <!--
     演示视频脚本（1-5 分钟录屏参考）：
-    1. 打开 https://yance77777.github.io/Fish-Agent-Demo/（0:00-0:10）
+    1. 打开 https://yance77777.github.io/Fish-Agent-Final/（0:00-0:10）
     2. 点击上传区，选择一张高度新鲜鱼眼照片（0:10-0:20）
     3. 点击"开始分析"，展示扫描动画（0:20-0:30）
     4. 分析完成，展示 4-Tab 报告：概览 → AI视觉分析 → 详细报告 → 处理建议（0:30-1:15）
@@ -656,6 +660,22 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ============ 参考文献 ============ -->
+    <section id="references" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">参考文献</h2>
+      </div>
+      <ol class="ref-list">
+        <li>Tan, M., &amp; Le, Q. V. (2019). <em>EfficientNet: Rethinking model scaling for convolutional neural networks</em>. Proceedings of the 36th International Conference on Machine Learning (ICML), PMLR 97:6105-6114.</li>
+        <li>Woo, S., Park, J., Lee, J.-Y., &amp; Kweon, I. S. (2018). <em>CBAM: Convolutional block attention module</em>. Proceedings of the European Conference on Computer Vision (ECCV), pp. 3-19.</li>
+        <li>Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &amp; Batra, D. (2017). <em>Grad-CAM: Visual explanations from deep networks via gradient-based localization</em>. Proceedings of the IEEE International Conference on Computer Vision (ICCV), pp. 618-626.</li>
+        <li>Simonyan, K., &amp; Zisserman, A. (2015). <em>Very deep convolutional networks for large-scale image recognition</em>. International Conference on Learning Representations (ICLR 2015).</li>
+        <li>He, K., Zhang, X., Ren, S., &amp; Sun, J. (2016). <em>Deep residual learning for image recognition</em>. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 770-778.</li>
+        <li>Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., &amp; Chen, L.-C. (2018). <em>MobileNetV2: Inverted residuals and linear bottlenecks</em>. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 4510-4520.</li>
+        <li>国家卫生和计划生育委员会 (2015). <em>GB 2733-2015 食品安全国家标准 鲜、冻动物性水产品</em>. 中国标准出版社.</li>
+      </ol>
     </section>
 
   </main>
