@@ -83,7 +83,7 @@
   <!-- ============ 导航栏 ============ -->
   <header class="navbar" role="banner">
     <div class="brand">
-      <div class="brand-logo" aria-hidden="true">FA</div>
+      <div class="brand-logo" aria-hidden="true"><span class="brand-eye"></span></div>
       <div class="brand-text">
         <span class="brand-title">Fish-Agent</span>
         <span class="brand-sub">水产品新鲜度智能评估</span>
@@ -973,27 +973,39 @@
       if (file) handleFileSelect(file);
     });
 
-    // —— 内置示例图片选择 ——
+    // —— 内置示例图片选择（预加载 + 即时响应） ——
     const sampleCard = document.getElementById("sampleCard");
     let sampleLoading = false;
+    const sampleBlobCache = {}; // 预加载缓存
+
+    // 页面加载时预取三张示例图片为 Blob，点击时零延迟构造 File
+    ["highly-fresh", "fresh", "not-fresh"].forEach((name) => {
+      fetch(`assets/samples/${name}.png`)
+        .then((r) => r.ok ? r.blob() : Promise.reject(r.status))
+        .then((blob) => { sampleBlobCache[name] = blob; })
+        .catch(() => {});
+    });
+
     document.querySelectorAll(".sample-tag").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (sampleLoading) return; // 防止快速连续点击
+        if (sampleLoading) return;
         sampleLoading = true;
         document.querySelectorAll(".sample-tag").forEach(b => b.disabled = true);
         const sampleName = btn.dataset.sample;
-        const imgUrl = `assets/samples/${sampleName}.png`;
         try {
-          const resp = await fetch(imgUrl);
-          if (!resp.ok) throw new Error("HTTP " + resp.status);
-          const blob = await resp.blob();
+          let blob = sampleBlobCache[sampleName];
+          if (!blob) {
+            // 缓存未命中时回退到实时 fetch
+            const resp = await fetch(`assets/samples/${sampleName}.png`);
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            blob = await resp.blob();
+          }
           if (blob.size === 0) throw new Error("空文件");
           const file = new File([blob], sampleName + ".png", { type: "image/png" });
           const dt = new DataTransfer();
           dt.items.add(file);
           fileInput.files = dt.files;
           fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-          // 成功载入后隐藏示例卡片
           sampleCard.classList.add("is-hidden");
         } catch (err) {
           showToast("示例图片加载失败，请重试", "error");
@@ -2071,7 +2083,8 @@
      * 格式化时间为本地可读字符串
      */
     const historyTimeFmt = new Intl.DateTimeFormat("zh-CN", {
-      month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false
+      month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+      timeZone: "Asia/Shanghai"
     });
     function formatHistoryTime(iso) {
       try {

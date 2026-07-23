@@ -44,7 +44,7 @@
   <!-- ============ 导航栏 ============ -->
   <header class="navbar" role="banner">
     <div class="brand">
-      <div class="brand-logo" aria-hidden="true">FA</div>
+      <div class="brand-logo" aria-hidden="true"><span class="brand-eye"></span></div>
       <div class="brand-text">
         <span class="brand-title">Fish-Agent</span>
         <span class="brand-sub">水产品新鲜度智能评估</span>
@@ -81,7 +81,7 @@
       <div id="archContent" class="arch-diagram">
         <!-- 第一层：用户浏览器 -->
         <div class="arch-layer">
-          <div class="arch-layer-title">用户浏览器（GitHub Pages 托管）</div>
+          <div class="arch-layer-title">用户浏览器（GitHub Pages 静态托管）</div>
           <div class="arch-boxes">
             <div class="arch-box">
               <span class="arch-box-icon" aria-hidden="true">🏠</span>
@@ -124,7 +124,7 @@
           <div class="arch-layer-title">离线体验模式（网络不可用时自动启用）</div>
           <div class="arch-boxes">
             <div class="arch-box arch-box-wide">
-              <span>展示示例分析结果 + [模拟] 标识 + 顶部提示横幅</span>
+              <span>展示示例分析结果，附 [模拟] 标签与顶部橙色提示横幅</span>
             </div>
           </div>
         </div>
@@ -143,9 +143,9 @@
             <span>当前痛点</span>
           </div>
           <ul class="pain-list">
-            <li>肉眼经验依赖个人技术，新手难掌握</li>
+            <li>肉眼判别依赖个人经验，新手难以掌握</li>
             <li>化学检测成本高、周期长，且<strong>破坏样品</strong></li>
-            <li>现有工具只给结论，不告诉"为什么"和"怎么办"</li>
+            <li>现有工具只给结论，不告诉"为什么"与"怎么办"</li>
           </ul>
         </div>
         <div class="pain-card solution">
@@ -154,7 +154,7 @@
             <span>Fish-Agent 解法</span>
           </div>
           <ul class="pain-list">
-            <li>鱼眼照片入口，<strong>低成本非破坏式</strong></li>
+            <li>鱼眼照片一键上传，<strong>零成本非破坏式</strong>检测</li>
             <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong></li>
             <li>Grad-CAM 热力图解释"为什么"，结构化报告给出"怎么办"</li>
             <li>置信度驱动自适应分支，低置信度主动提示重拍</li>
@@ -194,7 +194,7 @@
       </div>
       <div id="compareContent">
         <h3 class="section-subtitle">FishFreshNetV1 vs 主流模型</h3>
-        <p class="intro-sub">在 MFED（自建数据集）和 FFE（公开数据集）上的全面对比</p>
+        <p class="intro-sub">在 MFED（自建数据集）与 FFE（公开数据集<sup>[11]</sup>）上的全面性能对比</p>
 
         <div class="table-wrap">
           <table class="compare-table">
@@ -248,7 +248,7 @@
         </div>
 
         <p class="intro-sub" style="margin-top:16px;">
-          仅用 VGG16 的 3.1% 参数量，实现 1.15% 的准确率提升。
+          以 VGG16 仅 3.1% 的参数量，实现 1.15% 的准确率提升。
           数据集已开源：<a href="https://data.mendeley.com/datasets/67nmx3mhwh/2" target="_blank" rel="noopener noreferrer">Mendeley Data</a>
         </p>
       </div>
@@ -260,7 +260,7 @@
         <h2 class="section-title">FishFreshNetV1 模型架构</h2>
       </div>
       <div class="model-arch-content">
-        <p class="intro-sub">基于我撰写的论文，FishFreshNetV1 是一个轻量级且可解释的深度学习框架，专为鱼眼新鲜度分类任务设计。模型仅 <strong>4.22M</strong> 参数、<strong>0.41G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.23%</strong> 准确率。</p>
+        <p class="intro-sub">基于我撰写的研究论文，FishFreshNetV1 是一个轻量级且可解释的深度学习框架，专为鱼眼新鲜度分类任务设计。模型仅 <strong>4.22M</strong> 参数、<strong>0.41G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.23%</strong> 准确率。</p>
 
         <!-- 架构总览 -->
         <div class="model-flow">
@@ -347,7 +347,7 @@
             <li>对梯度执行全局平均池化，计算每个特征通道的重要性权重</li>
             <li>生成热力图，高亮对模型预测影响最大的图像空间区域</li>
           </ul>
-          <p>论文实验表明：在<strong>正确分类</strong>的案例中，红色高激活区域精准聚焦于<strong>瞳孔和角膜</strong>；在<strong>错误分类</strong>的案例中，高激活区域偏移至眼周明亮鱼鳞或镜面反射光斑——这证实模型确实在依据生物学特征做判断，而非依赖背景捷径。</p>
+          <p>论文实验表明：在<strong>正确分类</strong>的案例中，红色高激活区域精准聚焦于<strong>瞳孔和角膜</strong>；在<strong>错误分类</strong>的案例中，高激活区域偏移至眼周明亮鱼鳞或镜面反射光斑——这证实模型确实依据生物学特征做出判断，而非依赖背景捷径。</p>
         </div>
 
         <!-- 关键数据 -->
@@ -379,7 +379,7 @@
       </div>
       <div id="workflowContent">
         <h3 class="section-subtitle">LangGraph 16 节点智能体工作流</h3>
-        <p class="intro-sub">14 个逻辑步骤 · 16 个实际节点 · 置信度驱动的自适应分支</p>
+        <p class="intro-sub">14 个逻辑步骤、16 个实际节点，置信度驱动自适应分支</p>
 
         <!-- 拓扑图 -->
         <div class="workflow-topology">
@@ -533,14 +533,14 @@
             <div class="timeline-dot dot-gold" aria-hidden="true">💡</div>
             <div class="timeline-content">
               <h4>灵感诞生</h4>
-              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是新鲜度最强的视觉信号</strong>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
+              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是反映新鲜度最关键的视觉信号</strong>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
             </div>
           </div>
           <div class="timeline-item">
             <div class="timeline-dot dot-aqua" aria-hidden="true">🔬</div>
             <div class="timeline-content">
               <h4>独立研究</h4>
-              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
+              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework Based on Attention Mechanism for Fish Freshness Assessment》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
             </div>
           </div>
           <div class="timeline-item">
@@ -593,7 +593,7 @@
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">👥</div>
             <h4>受众规模</h4>
-            <p>全国水产品年产量 <strong>7116 万吨</strong>，产业链覆盖千万级从业者与 <strong>3 亿+</strong> 消费者，社会需求面极广。</p>
+            <p>据农业农村部《2023 年全国渔业经济统计公报》，全国水产品总产量 <strong>7116.17 万吨</strong>，产业链覆盖千万级从业者与 <strong>3 亿+</strong> 消费者，社会需求面极广。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🛡️</div>
@@ -608,7 +608,7 @@
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🏝️</div>
             <h4>助力边远地区</h4>
-            <p>一部手机 + 浏览器即可获得<strong>一线城市疾控中心级别</strong>的初步判别能力。</p>
+            <p>一部手机 + 浏览器即可获得<strong>一线城市专业检测机构级别</strong>的初步判别能力。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">⚖️</div>
@@ -618,7 +618,7 @@
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🔄</div>
             <h4>可复制性</h4>
-            <p>技术栈轻量（CPU 推理），部署标准化（一小时自建），<strong>场景可迁移</strong>（肉类/果蔬/海鲜）。</p>
+            <p>技术栈轻量（CPU 推理），部署标准化（一天内即可自建），<strong>场景可迁移</strong>（肉类/果蔬/海鲜）。</p>
           </div>
         </div>
       </div>
@@ -678,6 +678,7 @@
         <li>Yildiz, M. B., Yasin, E. T., &amp; Koklu, M. (2024). <em>Fisheye freshness detection using common deep learning algorithms and machine learning methods with a developed mobile application</em>. European Food Research and Technology, 250(7): 1919-1932.</li>
         <li>Madhubhashini, M. N., Liyanage, C. P., Alahakoon, A. U., et al. (2024). <em>Current applications and future trends of artificial senses in fish freshness determination: A review</em>. Journal of Food Science, 89(1): 33-50.</li>
         <li>国家卫生和计划生育委员会 (2015). <em>GB 2733-2015 食品安全国家标准 鲜、冻动物性水产品</em>. 中国标准出版社.</li>
+        <li>Prasetyo, E., Purbaningtyas, R., Adityo, R. D., &amp; Suciati, N. (2022). <em>Combining MobileNetV1 and depthwise separable convolution bottleneck with expansion for classifying the freshness of fish eyes</em>. Information Processing in Agriculture, 9(3): 1086-1097.（FFE 公开数据集来源，Mendeley Data 开源）</li>
       </ol>
     </section>
 
