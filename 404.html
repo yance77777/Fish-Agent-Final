@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#04162b" />
+  <meta name="robots" content="noindex" />
+  <title>404 · Fish-Agent</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <a href="index.html" class="skip-link">回到首页</a>
+
+  <div class="bg-layer" aria-hidden="true">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="bubbles" id="bubbles"></div>
+  </div>
+
+  <main style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:32px;">
+    <div style="font-family:'Orbitron',sans-serif; font-size:clamp(72px,15vw,120px); font-weight:800; background:linear-gradient(135deg,#fff,#27d0c4); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; line-height:1; margin-bottom:16px;">404</div>
+    <p style="font-size:clamp(18px,3vw,24px); color:#eaf6fb; font-weight:600; margin-bottom:8px;">这条鱼游走了 🐟</p>
+    <p style="font-size:14px; color:#8aa4b8; margin-bottom:32px;">你访问的页面不存在，但 Fish-Agent 还在帮你检测新鲜度。</p>
+    <a href="index.html" style="display:inline-flex; align-items:center; gap:8px; padding:12px 28px; background:linear-gradient(135deg,#27d0c4,#1185b8); color:#04162b; font-weight:700; font-size:15px; border-radius:12px; text-decoration:none; box-shadow:0 8px 24px rgba(39,208,196,0.35); transition:transform 0.3s;">
+      ← 回到 Fish-Agent 首页
+    </a>
+  </main>
+
+  <script>
+    // 最小化气泡生成
+    const bubbles = document.getElementById('bubbles');
+    if (bubbles && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      for (let i = 0; i < 8; i++) {
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        const size = 10 + Math.random() * 30;
+        b.style.width = size + 'px';
+        b.style.height = size + 'px';
+        b.style.left = Math.random() * 100 + '%';
+        b.style.animationDuration = (8 + Math.random() * 8) + 's';
+        b.style.animationDelay = Math.random() * 5 + 's';
+        b.style.setProperty('--sway', (Math.random() * 60 - 30) + 'px');
+        bubbles.appendChild(b);
+      }
+    }
+  </script>
+</body>
+</html>

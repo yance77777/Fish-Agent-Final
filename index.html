@@ -7,2112 +7,67 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Fish-Agent" />
-<meta name="description" content="Fish-Agent — 上传鱼眼照片，AI 秒级分析水产品新鲜度" />
+<meta name="description" content="Fish-Agent — 上传鱼眼照片，AI 秒级分析水产品新鲜度。基于 FishFreshNetV1 深度学习模型，99.23% 准确率，Grad-CAM 可解释热力图。" />
+<meta name="keywords" content="鱼眼新鲜度检测,水产品新鲜度,AI食品检测,FishFreshNetV1,Grad-CAM,深度学习,食品安全" />
+<meta name="author" content="祈雨柒" />
+<meta property="og:title" content="Fish-Agent · 水产品新鲜度智能评估" />
+<meta property="og:description" content="上传鱼眼照片，AI 秒级分析新鲜度。99.23% 准确率 + Grad-CAM 可解释热力图。" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://yance77777.github.io/Fish-Agent-Demo/" />
+<meta name="twitter:card" content="summary" />
 <title>Fish-Agent · 水产品新鲜度智能评估</title>
-<style>
-  /* ============ 设计系统 ============ */
-  :root {
-    --abyss: #04162b;
-    --deep: #062a4d;
-    --ocean: #0a4d7a;
-    --sea: #1185b8;
-    --aqua: #27d0c4;
-    --foam: #eaf6fb;
-    --white: #ffffff;
-    --fresh: #27d0c4;
-    --mid: #f5b54a;
-    --bad: #ef5b5b;
-    --ink: #0b2238;
-    --muted: #9bb4cc;
-    --card: rgba(255, 255, 255, .06);
-    --card-hover: rgba(255, 255, 255, .09);
-    --border: rgba(255, 255, 255, .12);
-    --border-hover: rgba(39, 208, 196, .4);
-
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
-
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 24px;
-    --space-6: 32px;
-    --space-7: 48px;
-    --space-8: 64px;
-
-    --font-stack: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
-    --transition: 0.3s ease;
-
-    --navbar-h: 64px;
-  }
-
-  /* ============ 基础重置 ============ */
-  *, *::before, *::after { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    font-family: var(--font-stack);
-    font-size: clamp(15px, 1vw + 0.7rem, 16px);
-    font-weight: 400;
-    line-height: 1.65;
-    color: var(--foam);
-    background: var(--abyss);
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* ============ 深海背景 ============ */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(39, 208, 196, 0.18), transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 20%, rgba(17, 133, 184, 0.22), transparent 65%),
-      radial-gradient(ellipse 70% 60% at 20% 80%, rgba(10, 77, 122, 0.4), transparent 70%),
-      linear-gradient(180deg, var(--abyss) 0%, var(--deep) 45%, var(--ink) 100%);
-  }
-  /* 底部波浪纹理 */
-  body::after {
-    content: "";
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 220px;
-    z-index: -1;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 220' preserveAspectRatio='none'><path d='M0,120 C240,200 480,40 720,100 C960,160 1200,60 1440,120 L1440,220 L0,220 Z' fill='%2304162b' fill-opacity='0.55'/><path d='M0,150 C240,90 480,210 720,140 C960,70 1200,180 1440,130 L1440,220 L0,220 Z' fill='%2302799a' fill-opacity='0.18'/></svg>");
-    background-size: cover;
-    background-position: bottom;
-    pointer-events: none;
-  }
-
-  img { max-width: 100%; display: block; }
-  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
-
-  /* ============ 导航栏 ============ */
-  .navbar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: var(--navbar-h);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 clamp(16px, 4vw, 40px);
-    background: rgba(4, 22, 43, 0.55);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border-bottom: 1px solid var(--border);
-  }
-  .brand { display: flex; align-items: center; gap: var(--space-3); }
-  .brand-logo {
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    display: grid; place-items: center;
-    font-weight: 800;
-    font-size: 15px;
-    color: var(--ink);
-    background: linear-gradient(135deg, var(--aqua) 0%, var(--sea) 100%);
-    box-shadow: 0 4px 14px rgba(39, 208, 196, 0.35);
-    letter-spacing: -0.5px;
-  }
-  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
-  .brand-title { font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: 0.2px; }
-  .brand-sub { font-size: 11.5px; color: var(--muted); letter-spacing: 0.3px; }
-
-  .nav-links { display: flex; gap: var(--space-5); align-items: center; }
-  .nav-links a {
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 4px;
-    position: relative;
-    transition: color var(--transition);
-  }
-  .nav-links a::after {
-    content: "";
-    position: absolute;
-    left: 0; bottom: 2px;
-    width: 0; height: 2px;
-    background: var(--aqua);
-    transition: width var(--transition);
-    border-radius: 2px;
-  }
-  .nav-links a:hover { color: var(--foam); }
-  .nav-links a:hover::after { width: 100%; }
-
-  /* ============ 主容器 ============ */
-  main {
-    max-width: 920px;
-    margin: 0 auto;
-    padding: calc(var(--navbar-h) + var(--space-7)) clamp(16px, 4vw, 32px) var(--space-8);
-  }
-
-  section { margin-bottom: var(--space-7); }
-
-  /* ============ Hero ============ */
-  .hero {
-    text-align: center;
-    padding: var(--space-5) 0 var(--space-3);
-    animation: fadeUp 0.9s ease both;
-  }
-  .hero-title {
-    font-size: clamp(40px, 8vw, 72px);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -1px;
-    margin: 0 0 var(--space-3);
-    background: linear-gradient(135deg, #ffffff 0%, var(--aqua) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-  }
-  .hero-tagline {
-    font-size: clamp(18px, 2.5vw, 22px);
-    font-weight: 600;
-    color: var(--foam);
-    margin: 0 0 var(--space-3);
-    letter-spacing: 2px;
-  }
-  .hero-desc {
-    font-size: 15px;
-    color: var(--muted);
-    margin: 0 auto var(--space-6);
-    max-width: 540px;
-  }
-  .hero-badges {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-3);
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--foam);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: transform var(--transition), border-color var(--transition), background var(--transition);
-  }
-  .badge:hover {
-    transform: translateY(-2px);
-    border-color: var(--border-hover);
-    background: var(--card-hover);
-  }
-  .badge-icon { font-size: 15px; }
-  .badge-num {
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--aqua);
-  }
-
-  /* ============ 区块标题 ============ */
-  .section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: var(--space-4);
-    gap: var(--space-3);
-  }
-  .section-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--white);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-title::before {
-    content: "";
-    width: 4px; height: 18px;
-    background: linear-gradient(180deg, var(--aqua), var(--sea));
-    border-radius: 2px;
-  }
-  .section-hint {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  /* ============ 上传区域 ============ */
-  .upload-zone {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: clamp(32px, 6vw, 56px) var(--space-5);
-    border: 2px dashed var(--border);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    cursor: pointer;
-    transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition);
-    outline: none;
-    min-height: 240px;
-  }
-  .upload-zone:hover,
-  .upload-zone:focus-visible {
-    border-color: var(--aqua);
-    background: var(--card-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(39, 208, 196, 0.12);
-  }
-  .upload-zone.is-dragover {
-    border-style: solid;
-    border-color: var(--aqua);
-    border-width: 3px;
-    background: rgba(39, 208, 196, 0.1);
-    transform: scale(1.01);
-    box-shadow: 0 0 0 6px rgba(39, 208, 196, 0.12), 0 16px 50px rgba(39, 208, 196, 0.2);
-  }
-  .upload-icon {
-    width: 72px; height: 72px;
-    margin-bottom: var(--space-4);
-    border-radius: 50%;
-    display: grid; place-items: center;
-    background: radial-gradient(circle at 30% 30%, rgba(39, 208, 196, 0.25), rgba(17, 133, 184, 0.15));
-    border: 1px solid var(--border-hover);
-    position: relative;
-  }
-  .upload-icon::before {
-    content: "";
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 1px solid rgba(39, 208, 196, 0.2);
-    animation: pulse 2.6s ease-in-out infinite;
-  }
-  /* CSS 绘制的鱼图标 */
-  .fish-icon {
-    width: 38px; height: 24px;
-    position: relative;
-  }
-  .fish-icon::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 4px;
-    width: 26px; height: 16px;
-    background: linear-gradient(135deg, var(--aqua), var(--sea));
-    border-radius: 50% 60% 60% 50% / 50% 50% 50% 50%;
-  }
-  .fish-icon::after {
-    content: "";
-    position: absolute;
-    right: 0; top: 0;
-    width: 0; height: 0;
-    border-left: 12px solid var(--aqua);
-    border-top: 12px solid transparent;
-    border-bottom: 12px solid transparent;
-    border-radius: 0 4px 0 0;
-  }
-  .fish-eye {
-    position: absolute;
-    left: 6px; top: 9px;
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: var(--ink);
-    box-shadow: 0 0 0 1px var(--foam);
-    z-index: 2;
-  }
-  .upload-text {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--foam);
-    margin: 0 0 var(--space-2);
-  }
-  .upload-text-drag {
-    color: var(--aqua);
-  }
-  .upload-meta {
-    font-size: 13px;
-    color: var(--muted);
-    margin: 0;
-    line-height: 1.7;
-  }
-  .upload-meta strong { color: var(--foam); font-weight: 600; }
-  .upload-cta {
-    margin-top: var(--space-4);
-    padding: 10px 22px;
-    border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--aqua) 0%, var(--sea) 100%);
-    color: var(--ink);
-    font-weight: 600;
-    font-size: 14px;
-    box-shadow: 0 6px 20px rgba(39, 208, 196, 0.3);
-    transition: transform var(--transition), box-shadow var(--transition);
-  }
-  .upload-zone:hover .upload-cta {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(39, 208, 196, 0.45);
-  }
-
-  /* ============ 预览区 ============ */
-  .preview-card {
-    display: none;
-    padding: var(--space-5);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-    animation: fadeUp 0.5s ease both;
-  }
-  .preview-card.is-active { display: block; }
-  .preview-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-5);
-    align-items: start;
-  }
-  .preview-image-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-  }
-  .preview-image-box {
-    width: 100%;
-    max-width: 500px;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: var(--ink);
-    position: relative;
-    min-height: 120px;
-    display: grid;
-    place-items: center;
-  }
-  .preview-image-box img {
-    width: 100%;
-    height: auto;
-    max-height: 460px;
-    object-fit: contain;
-    display: block;
-  }
-  .preview-loading {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    border: 3px solid rgba(39, 208, 196, 0.2);
-    border-top-color: var(--aqua);
-    animation: spin 0.9s linear infinite;
-  }
-  .preview-info {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-3);
-    font-size: 13px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .preview-info span { display: inline-flex; align-items: center; gap: 5px; }
-  .preview-info strong { color: var(--foam); font-weight: 600; }
-  .preview-actions { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-end; }
-  .btn-ghost {
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 500;
-    transition: all var(--transition);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-  }
-  .btn-ghost:hover {
-    color: var(--bad);
-    border-color: rgba(239, 91, 91, 0.4);
-    background: rgba(239, 91, 91, 0.08);
-  }
-  .btn-reupload-small {
-    padding: 6px 12px;
-    font-size: 12px;
-    color: var(--aqua);
-    border-color: var(--border-hover);
-  }
-  .btn-reupload-small:hover {
-    color: var(--aqua);
-    border-color: var(--aqua);
-    background: rgba(39, 208, 196, 0.08);
-  }
-
-  /* ============ 结果占位 ============ */
-  .result-placeholder {
-    padding: clamp(32px, 5vw, 48px) var(--space-5);
-    border: 2px dashed var(--border);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    text-align: center;
-    transition: border-color var(--transition);
-  }
-  .result-placeholder:hover { border-color: var(--border-hover); }
-  .result-icon {
-    width: 60px; height: 60px;
-    margin: 0 auto var(--space-4);
-    border-radius: 50%;
-    display: grid; place-items: center;
-    background: rgba(39, 208, 196, 0.08);
-    border: 1px solid var(--border);
-    color: var(--aqua);
-  }
-  .result-icon svg { width: 28px; height: 28px; }
-  .result-text {
-    font-size: 15px;
-    color: var(--foam);
-    margin: 0 0 var(--space-2);
-    font-weight: 500;
-  }
-  .result-sub {
-    font-size: 12.5px;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  /* ============ 页脚 ============ */
-  footer {
-    text-align: center;
-    padding: var(--space-6) var(--space-4);
-    color: var(--muted);
-    font-size: 12.5px;
-    letter-spacing: 0.3px;
-    border-top: 1px solid var(--border);
-    margin-top: var(--space-6);
-  }
-
-  /* ============ Toast ============ */
-  .toast-container {
-    position: fixed;
-    top: calc(var(--navbar-h) + 12px);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 200;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    pointer-events: none;
-    width: max-content;
-    max-width: calc(100vw - 32px);
-  }
-  .toast {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 18px;
-    border-radius: var(--radius-md);
-    background: rgba(239, 91, 91, 0.95);
-    color: #fff;
-    font-size: 13.5px;
-    font-weight: 500;
-    box-shadow: 0 10px 30px rgba(239, 91, 91, 0.35);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    animation: toastIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
-    pointer-events: auto;
-  }
-  .toast.is-leaving { animation: toastOut 0.3s ease both; }
-  .toast-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #fff;
-    flex-shrink: 0;
-  }
-  .toast.is-success { background: rgba(39, 208, 196, 0.95); color: var(--ink); }
-  .toast.is-success .toast-dot { background: var(--ink); }
-
-  /* ============ 动画 ============ */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.15); opacity: 0; }
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes toastOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-20px); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-
-  /* ============ 移动端适配 ============ */
-  @media (max-width: 768px) {
-    .nav-links { gap: var(--space-4); }
-    .nav-links a { font-size: 13px; }
-    .brand-sub { display: none; }
-    .preview-body {
-      grid-template-columns: 1fr;
-      gap: var(--space-4);
-    }
-    .preview-actions {
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-    }
-    .section-head { flex-direction: column; align-items: flex-start; gap: 4px; }
-    .hero-badges { gap: var(--space-2); }
-    .badge { padding: 8px 14px; font-size: 12.5px; }
-  }
-  @media (max-width: 375px) {
-    .nav-links a:nth-child(3) { display: none; }
-    .upload-zone { padding: 28px var(--space-3); min-height: 200px; }
-    .upload-text { font-size: 15px; }
-    .hero-title { font-size: 38px; }
-    .preview-card { padding: var(--space-4); }
-  }
-
-  /* ============ 深海动态背景：气泡 / 光晕 / 水纹 ============ */
-  .bg-layer {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    overflow: hidden;
-  }
-  .bubbles {
-    position: absolute;
-    inset: 0;
-    will-change: transform;
-  }
-  .bubble {
-    position: absolute;
-    bottom: -60px;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 255, 255, 0.35) 0%,
-      rgba(255, 255, 255, 0.12) 35%,
-      rgba(39, 208, 196, 0.1) 70%,
-      transparent 100%
-    );
-    box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.15);
-    will-change: transform;
-    animation: rise linear infinite;
-  }
-  @keyframes rise {
-    0% { transform: translate3d(0, 0, 0) scale(0.8); opacity: 0; }
-    8% { opacity: 0.9; }
-    50% { transform: translate3d(var(--sway, 0px), -50vh, 0) scale(1); }
-    92% { opacity: 0.7; }
-    100% { transform: translate3d(calc(var(--sway, 0px) * -1), -110vh, 0) scale(0.9); opacity: 0; }
-  }
-
-  .glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(60px);
-    will-change: transform, opacity;
-  }
-  .glow-1 {
-    top: -120px; right: -80px;
-    width: 420px; height: 420px;
-    background: radial-gradient(circle, rgba(39, 208, 196, 0.35), transparent 65%);
-    animation: breathe 12s ease-in-out infinite;
-  }
-  .glow-2 {
-    bottom: 8%; left: -100px;
-    width: 360px; height: 360px;
-    background: radial-gradient(circle, rgba(17, 133, 184, 0.4), transparent 65%);
-    animation: breathe 15s ease-in-out infinite reverse;
-  }
-  .glow-3 {
-    top: 35%; left: 50%;
-    width: 280px; height: 280px;
-    transform: translateX(-50%);
-    background: radial-gradient(circle, rgba(155, 180, 204, 0.18), transparent 65%);
-    animation: breathe 10s ease-in-out infinite;
-  }
-  @keyframes breathe {
-    0%, 100% { transform: scale(1) translate(var(--gx, 0), 0); opacity: 0.55; }
-    50% { transform: scale(1.18) translate(var(--gx, 0), 0); opacity: 0.9; }
-  }
-  .glow-3 { --gx: -50%; }
-
-  /* 底部水纹波浪 */
-  .wave {
-    position: absolute;
-    left: -10%;
-    right: -10%;
-    bottom: 0;
-    height: 220px;
-    opacity: 0.08;
-    background-repeat: repeat-x;
-    background-position: bottom;
-    background-size: 1400px 220px;
-    will-change: transform;
-  }
-  .wave-1 {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 220' preserveAspectRatio='none'><path d='M0,120 C240,200 480,40 720,100 C960,160 1200,60 1400,120 L1400,220 L0,220 Z' fill='%2327d0c4'/></svg>");
-    animation: sway 7s ease-in-out infinite;
-  }
-  .wave-2 {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 220' preserveAspectRatio='none'><path d='M0,150 C240,90 480,210 720,140 C960,70 1200,180 1400,130 L1400,220 L0,220 Z' fill='%231185b8'/></svg>");
-    animation: sway 8.5s ease-in-out infinite reverse;
-    opacity: 0.06;
-  }
-  @keyframes sway {
-    0%, 100% { transform: translateX(-20px); }
-    50% { transform: translateX(20px); }
-  }
-
-  /* ============ 图片扫描动画 ============ */
-  .scan-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    border-radius: inherit;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  .preview-image-box.scanning .scan-overlay { opacity: 1; }
-  .preview-image-box.scan-complete .scan-overlay {
-    opacity: 0;
-    transition: opacity 0.6s ease;
-  }
-
-  /* 扫描网格 */
-  .scan-grid {
-    position: absolute;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, rgba(39, 208, 196, 0.12) 0 1px, transparent 1px 28px),
-      repeating-linear-gradient(90deg, rgba(39, 208, 196, 0.1) 0 1px, transparent 1px 28px);
-    opacity: 0.07;
-    mix-blend-mode: screen;
-  }
-
-  /* 扫描线 */
-  .scan-line {
-    position: absolute;
-    left: 0; right: 0;
-    top: -10%;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, var(--aqua) 20%, #ffffff 50%, var(--aqua) 80%, transparent);
-    box-shadow: 0 0 15px rgba(39, 208, 196, 0.7), 0 0 30px rgba(39, 208, 196, 0.4);
-    opacity: 0;
-  }
-  .preview-image-box.scanning .scan-line {
-    opacity: 1;
-    animation: scan 2s linear infinite;
-  }
-  @keyframes scan {
-    0% { top: -5%; }
-    100% { top: 105%; }
-  }
-
-  /* 扫描状态徽标 */
-  .scan-badge {
-    position: absolute;
-    top: 12px; left: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    background: rgba(4, 22, 43, 0.7);
-    border: 1px solid var(--border-hover);
-    color: var(--aqua);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    opacity: 0;
-    transform: translateY(-6px);
-    transition: opacity 0.3s, transform 0.3s;
-  }
-  .preview-image-box.scanning .scan-badge {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .scan-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--aqua);
-    animation: blink 1s ease-in-out infinite;
-  }
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  /* ============ 骨架屏 ============ */
-  .skeleton-wrap {
-    display: none;
-    padding: var(--space-5);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-  }
-  .skeleton-wrap.loading { display: block; }
-  .skeleton {
-    position: relative;
-    overflow: hidden;
-    border-radius: 6px;
-    background: var(--card);
-  }
-  .skeleton::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-  .skeleton-box {
-    height: 14px;
-    border-radius: 6px;
-  }
-  .skeleton-text {
-    height: 12px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-  }
-  .skeleton-circle {
-    width: 60px; height: 60px;
-    border-radius: 50%;
-  }
-  .skeleton-img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: var(--radius-md);
-  }
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  /* 骨架屏内部布局 */
-  .skel-row {
-    display: flex;
-    gap: var(--space-4);
-    align-items: center;
-    margin-bottom: var(--space-5);
-  }
-  .skel-prob-row {
-    margin-bottom: 12px;
-  }
-  .skel-prob-row .skeleton-box { flex: 1; height: 10px; }
-
-  /* ============ 结果面板 ============ */
-  .results {
-    display: none;
-  }
-  .results.results-visible { display: block; }
-  .results.results-hidden { display: none; }
-
-  .results-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
-  }
-  .panel {
-    padding: var(--space-5);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-  }
-  .panel:hover {
-    transform: translateY(-3px);
-    border-color: var(--border-hover);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
-  }
-  .panel-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin: 0 0 var(--space-4);
-  }
-
-  /* 子面板 A：新鲜度等级 */
-  .freshness-card {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-  }
-  .freshness-indicator {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    display: grid; place-items: center;
-    flex-shrink: 0;
-    position: relative;
-  }
-  .freshness-indicator::before {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border-radius: 50%;
-    border: 1px solid currentColor;
-    opacity: 0.4;
-    animation: ringPulse 2.2s ease-in-out infinite;
-  }
-  @keyframes ringPulse {
-    0%, 100% { transform: scale(1); opacity: 0.4; }
-    50% { transform: scale(1.18); opacity: 0; }
-  }
-  .freshness-dot {
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 14px currentColor;
-  }
-  .freshness-high { color: var(--fresh); }
-  .freshness-mid  { color: var(--mid); }
-  .freshness-low  { color: var(--bad); }
-  .freshness-label {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--white);
-    line-height: 1.1;
-    margin-bottom: 4px;
-  }
-  .freshness-meta {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  /* 子面板 B：置信度仪表盘 */
-  .gauge-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-  }
-  .gauge {
-    position: relative;
-    width: 140px; height: 140px;
-  }
-  .gauge svg { transform: rotate(-90deg); }
-  .gauge-track {
-    fill: none;
-    stroke: var(--card);
-    stroke-width: 8;
-  }
-  .gauge-progress {
-    fill: none;
-    stroke-width: 8;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s cubic-bezier(0.2, 0.8, 0.3, 1);
-  }
-  .gauge-center {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .gauge-num {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--white);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-  }
-  .gauge-cap {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-    letter-spacing: 0.5px;
-  }
-  .gauge-label {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: var(--space-3);
-  }
-
-  /* 子面板 C：概率分布 */
-  .prob-list { display: flex; flex-direction: column; gap: 14px; }
-  .prob-row { display: flex; align-items: center; gap: 12px; }
-  .prob-name {
-    width: 64px;
-    font-size: 13px;
-    color: var(--foam);
-    flex-shrink: 0;
-  }
-  .prob-bar {
-    flex: 1;
-    height: 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    overflow: hidden;
-    position: relative;
-  }
-  .prob-fill {
-    position: absolute;
-    inset: 0;
-    width: 0;
-    border-radius: 999px;
-    transition: width 0.9s cubic-bezier(0.2, 0.8, 0.3, 1);
-  }
-  .prob-row.high .prob-fill {
-    background: linear-gradient(90deg, var(--aqua), #4be0d6);
-    box-shadow: 0 0 10px rgba(39, 208, 196, 0.5);
-  }
-  .prob-row.mid .prob-fill {
-    background: linear-gradient(90deg, var(--mid), #ffc97a);
-  }
-  .prob-row.low .prob-fill {
-    background: linear-gradient(90deg, var(--bad), #ff8888);
-  }
-  .prob-val {
-    width: 56px;
-    text-align: right;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--white);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* 子面板 D：图像对比 */
-  .compare-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-  }
-  .compare-item { display: flex; flex-direction: column; gap: 8px; }
-  .compare-label {
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.3px;
-  }
-  .compare-img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: var(--ink);
-    transition: transform var(--transition), border-color var(--transition);
-  }
-  .compare-img img { width: 100%; height: 100%; object-fit: cover; }
-  .compare-img:hover {
-    transform: scale(1.03);
-    border-color: var(--border-hover);
-  }
-  .heatmap-placeholder {
-    width: 100%; height: 100%;
-    background:
-      radial-gradient(circle at 35% 45%, rgba(239, 91, 91, 0.7), transparent 35%),
-      radial-gradient(circle at 35% 45%, rgba(245, 181, 74, 0.6), transparent 55%),
-      radial-gradient(circle at 60% 60%, rgba(39, 208, 196, 0.5), transparent 70%),
-      linear-gradient(135deg, var(--ocean), var(--ink));
-    position: relative;
-  }
-  .heatmap-placeholder::after {
-    content: "Grad-CAM 热力图占位";
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.55);
-    letter-spacing: 0.5px;
-  }
-
-  /* 子面板 E：建议卡片 */
-  .advice-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--space-3);
-  }
-  .advice-card {
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border);
-    transition: transform var(--transition), border-color var(--transition);
-  }
-  .advice-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--border-hover);
-  }
-  .advice-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-  .advice-icon {
-    width: 26px; height: 26px;
-    border-radius: 7px;
-    display: grid; place-items: center;
-    font-size: 13px;
-    flex-shrink: 0;
-  }
-  .advice-icon.store { background: rgba(39, 208, 196, 0.18); color: var(--aqua); }
-  .advice-icon.eat   { background: rgba(245, 181, 74, 0.18); color: var(--mid); }
-  .advice-icon.safe  { background: rgba(239, 91, 91, 0.18); color: var(--bad); }
-  .advice-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--white);
-  }
-  .advice-text {
-    font-size: 12.5px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  /* 子面板 F：结构化描述 */
-  .desc-quote {
-    border-left: 3px solid var(--aqua);
-    padding: 4px 0 4px var(--space-4);
-    margin: 0;
-    font-size: 14px;
-    color: var(--foam);
-    line-height: 1.75;
-  }
-
-  /* 空态占位（初始未上传时） */
-  .results-empty {
-    padding: clamp(32px, 5vw, 48px) var(--space-5);
-    border: 2px dashed var(--border);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    text-align: center;
-    transition: border-color var(--transition);
-  }
-  .results-empty:hover { border-color: var(--border-hover); }
-  .results-empty .result-icon {
-    width: 60px; height: 60px;
-    margin: 0 auto var(--space-4);
-    border-radius: 50%;
-    display: grid; place-items: center;
-    background: rgba(39, 208, 196, 0.08);
-    border: 1px solid var(--border);
-    color: var(--aqua);
-  }
-  .results-empty .result-icon svg { width: 28px; height: 28px; }
-  .results-empty .result-text {
-    font-size: 15px;
-    color: var(--foam);
-    margin: 0 0 var(--space-2);
-    font-weight: 500;
-  }
-  .results-empty .result-sub {
-    font-size: 12.5px;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  /* 触发分析按钮（占位） */
-  .btn-analyze {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: var(--space-4);
-    padding: 12px 26px;
-    border-radius: var(--radius-md);
-    background: linear-gradient(135deg, var(--aqua) 0%, var(--sea) 100%);
-    color: var(--ink);
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-    box-shadow: 0 8px 24px rgba(39, 208, 196, 0.35);
-    transition: transform var(--transition), box-shadow var(--transition);
-  }
-  .btn-analyze:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(39, 208, 196, 0.5);
-  }
-  .btn-analyze:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* ============ 入场动画 ============ */
-  .reveal {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-    will-change: opacity, transform;
-  }
-  .reveal.revealed {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .reveal[data-delay="1"] { transition-delay: 0.1s; }
-  .reveal[data-delay="2"] { transition-delay: 0.2s; }
-  .reveal[data-delay="3"] { transition-delay: 0.3s; }
-
-  /* 上传区脉冲光环 */
-  .upload-zone-pulse {
-    position: relative;
-  }
-  .upload-zone-pulse::before {
-    content: "";
-    position: absolute;
-    inset: -2px;
-    border-radius: var(--radius-xl);
-    box-shadow: 0 0 0 0 rgba(39, 208, 196, 0.4);
-    animation: zonePulse 2s ease-out infinite;
-    pointer-events: none;
-  }
-  .upload-zone-pulse:hover::before { animation-duration: 1s; }
-  @keyframes zonePulse {
-    0% { box-shadow: 0 0 0 0 rgba(39, 208, 196, 0.4); }
-    100% { box-shadow: 0 0 0 14px rgba(39, 208, 196, 0); }
-  }
-
-  /* 移动端：结果面板堆叠 */
-  @media (max-width: 768px) {
-    .results-grid { grid-template-columns: 1fr; }
-    .compare-grid { grid-template-columns: 1fr; }
-    .advice-grid { grid-template-columns: 1fr; }
-    .gauge { width: 120px; height: 120px; }
-    .gauge-num { font-size: 22px; }
-    .freshness-label { font-size: 22px; }
-    .btn-analyze { width: 100%; }
-  }
-
-  /* ============ 分析按钮（Session 3） ============ */
-  .analyze-actions {
-    margin-top: var(--space-4);
-    display: flex;
-    justify-content: center;
-  }
-  .btn-analyze {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 14px 36px;
-    font-size: 16px;
-    font-weight: 700;
-    font-family: inherit;
-    color: var(--ink);
-    background: linear-gradient(135deg, var(--aqua), var(--sea));
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition), background var(--transition);
-    box-shadow: 0 6px 24px rgba(39, 208, 196, 0.35);
-    position: relative;
-    overflow: hidden;
-  }
-  .btn-analyze:hover:not(.is-disabled):not(.is-loading) {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 32px rgba(39, 208, 196, 0.5);
-  }
-  .btn-analyze:active:not(.is-disabled):not(.is-loading) {
-    transform: translateY(-1px);
-  }
-  .btn-analyze.is-disabled {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--muted);
-    cursor: not-allowed;
-    box-shadow: none;
-    opacity: 0.7;
-  }
-  .btn-analyze.is-loading {
-    background: linear-gradient(135deg, var(--sea), var(--ocean));
-    color: var(--foam);
-    cursor: wait;
-    box-shadow: 0 4px 16px rgba(17, 133, 184, 0.4);
-  }
-  .btn-analyze.is-retry {
-    background: linear-gradient(135deg, var(--mid), var(--bad));
-    color: var(--white);
-    box-shadow: 0 6px 24px rgba(239, 91, 91, 0.35);
-  }
-  .btn-analyze-spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: var(--foam);
-    border-radius: 50%;
-    display: none;
-    animation: btn-spin 0.8s linear infinite;
-  }
-  .btn-analyze.is-loading .btn-analyze-spinner { display: inline-block; }
-  .btn-analyze.is-loading .btn-analyze-icon { display: none; }
-  @keyframes btn-spin { to { transform: rotate(360deg); } }
-
-  /* 离线模式徽标 */
-  .offline-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-left: 8px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--mid);
-    background: rgba(245, 181, 74, 0.15);
-    border: 1px solid rgba(245, 181, 74, 0.3);
-    border-radius: 999px;
-    vertical-align: middle;
-  }
-
-  /* 热力图图片样式 */
-  .heatmap-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: var(--radius-md);
-    display: block;
-  }
-
-  /* 新鲜度卡片颜色过渡 */
-  .freshness-card {
-    transition: background-color 0.5s ease, border-color 0.5s ease;
-  }
-  /* 概率条宽度过渡 */
-  .prob-fill {
-    transition: width 0.8s ease;
-  }
-  /* 仪表盘进度过渡 */
-  .gauge-progress {
-    transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
-  }
-
-  /* ============ Session 4：报告 Tab 系统 ============ */
-  .report-tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: var(--space-5);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .report-tabs::-webkit-scrollbar { display: none; }
-  .report-tab {
-    flex: 0 0 auto;
-    padding: 12px 18px;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color var(--transition), border-color var(--transition);
-    margin-bottom: -1px;
-  }
-  .report-tab:hover { color: var(--foam); }
-  .report-tab.is-active {
-    color: var(--aqua);
-    border-bottom-color: var(--aqua);
-  }
-  .report-tabpane {
-    display: none;
-    animation: tab-fade 0.3s ease;
-  }
-  .report-tabpane.is-active { display: block; }
-  @keyframes tab-fade {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* 关键指标摘要行 */
-  .metrics-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: var(--space-5);
-  }
-  .metric-item {
-    padding: 14px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    text-align: center;
-  }
-  .metric-label {
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 4px;
-    letter-spacing: 0.5px;
-  }
-  .metric-val {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--foam);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* ============ 图像对比滑块 ============ */
-  .compare-slider {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    background: var(--ink);
-    user-select: none;
-    touch-action: none;
-  }
-  .compare-slider img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    pointer-events: none;
-  }
-  .comp-overlay {
-    position: absolute;
-    inset: 0;
-    will-change: clip-path;
-  }
-  .comp-handle {
-    position: absolute;
-    top: 0; bottom: 0;
-    width: 3px;
-    background: var(--aqua);
-    transform: translateX(-50%);
-    cursor: col-resize;
-    z-index: 5;
-    box-shadow: 0 0 12px rgba(39, 208, 196, 0.6);
-  }
-  .comp-handle-knob {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: var(--aqua);
-    color: var(--ink);
-    display: grid; place-items: center;
-    font-size: 14px;
-    font-weight: 700;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-  }
-  .comp-label {
-    position: absolute;
-    top: 10px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    background: rgba(0, 0, 0, 0.55);
-    color: var(--foam);
-    border-radius: 999px;
-    z-index: 6;
-    pointer-events: none;
-  }
-  .comp-label.left { left: 10px; }
-  .comp-label.right { right: 10px; }
-
-  /* ============ 手风琴折叠 ============ */
-  .accordion {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    margin-bottom: var(--space-4);
-    background: var(--card);
-  }
-  .accordion-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.03);
-    transition: background var(--transition);
-  }
-  .accordion-head:hover { background: rgba(255, 255, 255, 0.06); }
-  .accordion-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--foam);
-  }
-  .accordion-arrow {
-    color: var(--muted);
-    transition: transform 0.3s ease;
-    font-size: 12px;
-  }
-  .accordion.is-open .accordion-arrow { transform: rotate(90deg); }
-  .accordion-body {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease;
-  }
-  .accordion.is-open .accordion-body { max-height: 1200px; }
-  .accordion-inner { padding: 16px 18px; }
-
-  /* ============ 导出按钮 ============ */
-  .report-toolbar {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-bottom: var(--space-4);
-    flex-wrap: wrap;
-  }
-  .btn-export {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    font-size: 12.5px;
-    font-weight: 600;
-    font-family: inherit;
-    color: var(--foam);
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition);
-  }
-  .btn-export:hover {
-    border-color: var(--border-hover);
-    color: var(--aqua);
-    transform: translateY(-2px);
-  }
-
-  /* ============ 历史记录 ============ */
-  .history-section { margin-top: var(--space-6); }
-  .history-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-4);
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .history-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--white);
-    margin: 0;
-  }
-  .history-filter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px;
-    color: var(--muted);
-  }
-  .history-filter input { accent-color: var(--aqua); cursor: pointer; }
-  .history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .history-empty {
-    padding: 28px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 13.5px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-lg);
-  }
-  .history-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition);
-  }
-  .history-item:hover {
-    border-color: var(--border-hover);
-    transform: translateX(4px);
-  }
-  .history-thumb {
-    width: 56px; height: 56px;
-    border-radius: 10px;
-    object-fit: cover;
-    flex-shrink: 0;
-    background: var(--ink);
-  }
-  .history-info { flex: 1; min-width: 0; }
-  .history-row1 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-  }
-  .history-badge {
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    border-radius: 999px;
-  }
-  .history-badge.high { background: rgba(39, 208, 196, 0.18); color: var(--aqua); }
-  .history-badge.mid  { background: rgba(245, 181, 74, 0.18); color: var(--mid); }
-  .history-badge.low  { background: rgba(239, 91, 91, 0.18); color: var(--bad); }
-  .history-conf {
-    font-size: 12.5px;
-    color: var(--foam);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-  .history-time {
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-  .history-actions { display: flex; gap: 6px; }
-  .history-btn {
-    width: 30px; height: 30px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 13px;
-    display: grid; place-items: center;
-    transition: all var(--transition);
-  }
-  .history-btn:hover { color: var(--foam); border-color: var(--border-hover); }
-  .history-btn.is-fav { color: var(--mid); border-color: rgba(245, 181, 74, 0.4); }
-  .history-btn.del:hover { color: var(--bad); border-color: rgba(239, 91, 91, 0.4); }
-
-  /* ============ 新手引导气泡 ============ */
-  .onboarding-tip {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(12px);
-    background: linear-gradient(135deg, var(--aqua), var(--sea));
-    color: var(--ink);
-    padding: 10px 18px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 8px 28px rgba(39, 208, 196, 0.4);
-    z-index: 50;
-    animation: tip-bounce 2s ease infinite;
-  }
-  .onboarding-tip::before {
-    content: "";
-    position: absolute;
-    top: -7px; left: 50%;
-    transform: translateX(-50%) rotate(45deg);
-    width: 14px; height: 14px;
-    background: var(--aqua);
-  }
-  @keyframes tip-bounce {
-    0%, 100% { transform: translateX(-50%) translateY(12px); }
-    50%      { transform: translateX(-50%) translateY(6px); }
-  }
-
-  /* ============ 打印优化（导出截图降级） ============ */
-  @media print {
-    body { background: white !important; color: black !important; }
-    .bg-layer, .nav-bar, .hero, .upload-section, .intro-section, footer, .preview-card, .report-toolbar, .history-section, .analyze-actions { display: none !important; }
-    .results { color: black !important; }
-    .panel, .freshness-card, .advice-card, .metric-item, .accordion { background: white !important; border: 1px solid #ccc !important; box-shadow: none !important; }
-    .freshness-label, .panel-title, .gauge-num, .history-title { color: black !important; }
-    .prob-fill { background: #27d0c4 !important; }
-  }
-
-  @media (max-width: 768px) {
-    .metrics-row { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* ============ Session 5：全局焦点样式 ============ */
-  :focus-visible {
-    outline: 2px solid var(--aqua);
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
-  /* 所有可点击元素防双击缩放 */
-  button, a, .upload-zone, .report-tab, .history-item, .accordion-head, .comp-handle {
-    touch-action: manipulation;
-  }
-  /* 最小触摸尺寸保障 */
-  .btn-analyze, .btn-export, .history-btn, .nav-toggle {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* ============ Session 5：汉堡菜单 ============ */
-  .nav-toggle {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    width: 44px; height: 44px;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    padding: 10px;
-  }
-  .nav-toggle-bar {
-    display: block;
-    width: 100%; height: 2px;
-    background: var(--foam);
-    transition: transform 0.3s ease, opacity 0.3s ease;
-  }
-  .nav-toggle.is-open .nav-toggle-bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-  .nav-toggle.is-open .nav-toggle-bar:nth-child(2) { opacity: 0; }
-  .nav-toggle.is-open .nav-toggle-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-  .nav-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(4, 22, 43, 0.97);
-    backdrop-filter: blur(14px);
-    z-index: 200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: overlay-fade 0.25s ease;
-  }
-  @keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
-  .nav-overlay[hidden] { display: none; }
-  .nav-overlay-links {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-    text-align: center;
-  }
-  .nav-overlay-links a {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--foam);
-    text-decoration: none;
-    padding: 12px 24px;
-    transition: color var(--transition);
-  }
-  .nav-overlay-links a:hover { color: var(--aqua); }
-
-  /* ============ Session 5：离线模式横幅 ============ */
-  .offline-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    margin-bottom: var(--space-4);
-    background: rgba(245, 181, 74, 0.12);
-    border: 1px solid rgba(245, 181, 74, 0.4);
-    border-radius: var(--radius-lg);
-    color: var(--mid);
-    font-size: 13.5px;
-    font-weight: 600;
-    animation: banner-slide 0.4s ease;
-  }
-  .offline-banner[hidden] { display: none; }
-  @keyframes banner-slide {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  /* 模拟数据小标签 */
-  .sim-tag {
-    display: inline-block;
-    margin-left: 6px;
-    padding: 1px 6px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--mid);
-    background: rgba(245, 181, 74, 0.18);
-    border-radius: 4px;
-    vertical-align: middle;
-  }
-  /* 模拟热力图（CSS 径向渐变） */
-  .simulated-heatmap {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 45% 40%, rgba(255, 0, 0, 0.6) 0%, rgba(255, 255, 0, 0.3) 30%, transparent 60%),
-      radial-gradient(circle at 55% 45%, rgba(255, 100, 0, 0.4) 0%, transparent 40%);
-    mix-blend-mode: overlay;
-    pointer-events: none;
-  }
-
-  /* ============ Session 5：比赛页脚 ============ */
-  .competition-footer {
-    padding: var(--space-6) var(--space-4);
-    text-align: center;
-    border-top: 1px solid var(--border);
-    background: rgba(4, 22, 43, 0.5);
-  }
-  .competition-info, .tech-stack {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: var(--space-3);
-  }
-  .competition-footer .badge,
-  .tech-stack span {
-    font-size: 12.5px;
-    padding: 5px 12px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--muted);
-  }
-  .competition-info .badge { color: var(--aqua); }
-  .footer-copy {
-    margin-top: var(--space-3);
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-
-  /* ============ Session 5：移动端深度适配 ============ */
-  @media (max-width: 1024px) {
-    .nav-links { gap: 18px; }
-  }
-  @media (max-width: 640px) {
-    .nav-links { display: none; }
-    .nav-toggle { display: flex; }
-    .hero-title { font-size: clamp(26px, 8vw, 42px); }
-    .upload-zone { width: 100%; min-height: 140px; }
-    .preview-img { max-width: 100%; }
-    .compare-slider { aspect-ratio: 1 / 1; }
-    .comp-handle-knob { width: 48px; height: 48px; font-size: 16px; }
-    .advice-grid { grid-template-columns: 1fr; }
-    .results-grid { grid-template-columns: 1fr; }
-    .history-item { flex-wrap: wrap; }
-    .toast {
-      left: 50%;
-      right: auto;
-      transform: translateX(-50%);
-      width: calc(100% - 24px);
-      max-width: 420px;
-    }
-    .report-tabs { gap: 2px; }
-    .report-tab { padding: 10px 12px; font-size: 13px; }
-    .competition-info, .tech-stack { gap: 6px; }
-    .competition-footer .badge,
-    .tech-stack span { font-size: 11px; padding: 4px 10px; }
-  }
-
-  /* ============ Session 5：减少动画偏好 ============ */
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-    }
-    .bubble, .wave, .glow { display: none !important; }
-    .reveal { opacity: 1 !important; transform: none !important; }
-  }
-
-  /* ============ Session 5：打印优化扩展 ============ */
-  @media print {
-    .nav-toggle, .nav-overlay, .offline-banner, .report-tabs, .skeleton-wrap, .analyze-actions { display: none !important; }
-    .report-tabpane { display: block !important; }
-    .results-grid, .advice-grid, .metrics-row { grid-template-columns: 1fr 1fr; }
-    .competition-footer { color: #555 !important; }
-  }
-
-  /* ============ 介绍区 (#intro) ============ */
-  .intro-section { padding-top: var(--space-3); }
-  .intro-block {
-    margin-bottom: var(--space-7);
-  }
-  .intro-block:last-child { margin-bottom: 0; }
-
-  .intro-heading {
-    font-size: clamp(22px, 3vw, 28px);
-    font-weight: 700;
-    color: var(--white);
-    margin: 0 0 var(--space-2);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .intro-heading::before {
-    content: "";
-    width: 5px; height: 22px;
-    background: linear-gradient(180deg, var(--aqua), var(--sea));
-    border-radius: 3px;
-    flex-shrink: 0;
-  }
-  .intro-sub {
-    font-size: 14px;
-    color: var(--muted);
-    margin: 0 0 var(--space-5);
-    padding-left: 17px;
-  }
-
-  /* 板块 1：痛点 vs 解法 双栏 */
-  .compare-pain {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-  }
-  .pain-card {
-    padding: var(--space-5);
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: transform var(--transition), border-color var(--transition);
-  }
-  .pain-card:hover {
-    transform: translateY(-3px);
-  }
-  .pain-card.pain {
-    background: rgba(239, 91, 91, 0.07);
-    border-color: rgba(239, 91, 91, 0.25);
-  }
-  .pain-card.pain:hover { border-color: rgba(239, 91, 91, 0.5); }
-  .pain-card.solution {
-    background: rgba(39, 208, 196, 0.07);
-    border-color: rgba(39, 208, 196, 0.25);
-  }
-  .pain-card.solution:hover { border-color: rgba(39, 208, 196, 0.5); }
-  .pain-card-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: var(--space-4);
-    font-size: 16px;
-    font-weight: 700;
-  }
-  .pain-card.pain .pain-card-head { color: var(--bad); }
-  .pain-card.solution .pain-card-head { color: var(--aqua); }
-  .pain-icon {
-    width: 30px; height: 30px;
-    border-radius: 8px;
-    display: grid; place-items: center;
-    font-size: 15px;
-    flex-shrink: 0;
-  }
-  .pain-card.pain .pain-icon { background: rgba(239, 91, 91, 0.18); }
-  .pain-card.solution .pain-icon { background: rgba(39, 208, 196, 0.18); }
-  .pain-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .pain-list li {
-    font-size: 13.5px;
-    color: var(--foam);
-    line-height: 1.6;
-    padding-left: 20px;
-    position: relative;
-  }
-  .pain-list li::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 8px;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-  }
-  .pain-card.pain .pain-list li::before { background: var(--bad); }
-  .pain-card.solution .pain-list li::before { background: var(--aqua); }
-  .pain-list li strong { color: var(--white); font-weight: 600; }
-
-  /* 板块 2：三类用户卡片 */
-  .users-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-4);
-  }
-  .user-card {
-    padding: var(--space-5);
-    border-radius: var(--radius-xl);
-    background: var(--card);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-  }
-  .user-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--border-hover);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
-  }
-  .user-icon {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    display: grid; place-items: center;
-    font-size: 22px;
-    margin-bottom: var(--space-3);
-    background: rgba(39, 208, 196, 0.12);
-    border: 1px solid var(--border-hover);
-  }
-  .user-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--white);
-    margin: 0 0 6px;
-  }
-  .user-text {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.65;
-    margin: 0;
-  }
-
-  /* 板块 3：方案对比表格 */
-  .table-wrap {
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--border);
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .compare-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 560px;
-  }
-  .compare-table th,
-  .compare-table td {
-    padding: 14px 18px;
-    text-align: left;
-    font-size: 13.5px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  .compare-table thead th {
-    background: rgba(39, 208, 196, 0.08);
-    color: var(--aqua);
-    font-weight: 700;
-    font-size: 12.5px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-  .compare-table tbody td:first-child {
-    color: var(--muted);
-    font-weight: 600;
-  }
-  .compare-table tbody td {
-    color: var(--foam);
-  }
-  .compare-table tbody td.highlight {
-    color: var(--aqua);
-    font-weight: 600;
-  }
-  .compare-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
-  }
-  .compare-table tbody tr:last-child td { border-bottom: none; }
-
-  /* 板块 4：工作流时间轴 */
-  .workflow {
-    position: relative;
-    padding-left: 0;
-  }
-  .workflow-node {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-5);
-    margin-bottom: 14px;
-    border-radius: var(--radius-lg);
-    background: var(--card);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-    position: relative;
-  }
-  .workflow-node:hover {
-    transform: translateX(8px);
-    border-color: var(--border-hover);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  }
-  .workflow-node:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    left: 36px;
-    bottom: -14px;
-    width: 2px;
-    height: 14px;
-    background: linear-gradient(180deg, var(--border-hover), transparent);
-  }
-  .workflow-num {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    display: grid; place-items: center;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ink);
-    background: linear-gradient(135deg, var(--aqua), var(--sea));
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(39, 208, 196, 0.3);
-  }
-  .workflow-body { flex: 1; }
-  .workflow-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--white);
-    margin: 0 0 4px;
-  }
-  .workflow-desc {
-    font-size: 12.5px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin: 0;
-  }
-  .workflow-branch {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 10.5px;
-    font-weight: 600;
-    vertical-align: middle;
-  }
-  .workflow-branch.high { background: rgba(39, 208, 196, 0.18); color: var(--aqua); }
-  .workflow-branch.mid  { background: rgba(245, 181, 74, 0.18); color: var(--mid); }
-  .workflow-branch.low  { background: rgba(239, 91, 91, 0.18); color: var(--bad); }
-
-  /* 介绍区移动端适配 */
-  @media (max-width: 768px) {
-    .compare-pain { grid-template-columns: 1fr; }
-    .users-grid { grid-template-columns: 1fr; }
-  }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" media="print" onload="this.media='all'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" /></noscript>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="manifest" href="./assets/manifest.json">
 </head>
 <body>
+  <!--
+  ==============================
+  复赛提交自检清单
+  ==============================
+  【社区发帖】
+  [ ] 帖子已发至 TRAE 社区复赛专区
+  [ ] 标签：社会服务
+  [ ] 标题：【社会服务赛道】Fish-Agent：水产品新鲜度智能评估系统
+  [ ] 正文含：产品简介 / 演示视频 / 创作历程 / TRAE 实践过程
+  [ ] ≥ 3 张开发截图
+  [ ] ≥ 3 个 Session ID（实际有 10 个）
+  [ ] 不含可下载源码/安装包/体验链接/二维码
+
+  【飞书问卷】
+  [ ] 队长社区昵称已填
+  [ ] 社区作品链接已回填
+  [ ] 参赛赛道：社会服务
+  [ ] 对应初赛晋级作品链接已填
+  [ ] 作品体验入口：https://yance77777.github.io/Fish-Agent-Demo/
+  [ ] 产品演示视频链接已填
+
+  【作品本身】
+  [ ] 在线体验入口可访问（GitHub Pages）
+  [ ] 核心功能完整：上传 → 分析 → 4-Tab 报告 → 5 大类建议 → 历史
+  [ ] 置信度自适应：三色仪表盘 + <75% 黄色 + <60% 红色弹窗
+  [ ] 移动端深度适配
+  [ ] PWA：Service Worker + manifest + 安装提示
+  [ ] about.html：技术架构 + 性能对比 + 工作流拓扑 + 创作历程 + 社会价值 + 迭代规划
+  [ ] 离线演示模式正常
+  [ ] Lighthouse 移动端 ≥ 90
+
+  【Session ID】
+  [ ] Session 1-5 已回填（初赛已有）
+  [ ] Session 6-10 待回填（复赛完成后从 TRAE 复制）
+
+  【时间节点】
+  [ ] 提交截止：2026 年 8 月 9 日 23:59
+  [ ] 评审期：8 月 10 日 - 8 月 14 日
+  [ ] 公示：8 月 15 日
+  ==============================
+  -->
+  <a href="#home" class="skip-link">跳到主内容</a>
 
   <!-- ============ 深海动态背景层 ============ -->
   <div class="bg-layer" aria-hidden="true">
@@ -2135,7 +90,7 @@
     </div>
     <nav class="nav-links" aria-label="主导航">
       <a href="#home">首页</a>
-      <a href="#intro">关于</a>
+      <a href="about.html">关于</a>
       <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener">开源</a>
     </nav>
     <button class="nav-toggle" id="navToggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navOverlay">
@@ -2149,7 +104,7 @@
   <div class="nav-overlay" id="navOverlay" hidden>
     <nav class="nav-overlay-links" aria-label="移动端导航">
       <a href="#home" data-close>首页</a>
-      <a href="#intro" data-close>关于</a>
+      <a href="about.html" data-close>关于</a>
       <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener" data-close>开源</a>
     </nav>
   </div>
@@ -2158,20 +113,127 @@
 
     <!-- ============ Hero ============ -->
     <section class="hero reveal" aria-labelledby="hero-title">
+      <div class="hero-eye-wrap" role="img" aria-label="鱼眼特写视觉锚点">
+        <svg class="hero-eye" viewBox="0 0 240 240" width="240" height="240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <radialGradient id="irisGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0a2a3a" />
+              <stop offset="25%" stop-color="#0d4d5c" />
+              <stop offset="55%" stop-color="#1185b8" />
+              <stop offset="80%" stop-color="#27d0c4" />
+              <stop offset="100%" stop-color="#a8f5ee" />
+            </radialGradient>
+            <radialGradient id="pupilGrad" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#1a2238" />
+              <stop offset="60%" stop-color="#000814" />
+              <stop offset="100%" stop-color="#000000" />
+            </radialGradient>
+            <radialGradient id="corneaGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+              <stop offset="78%" stop-color="#ffffff" stop-opacity="0" />
+              <stop offset="92%" stop-color="#27d0c4" stop-opacity="0.18" />
+              <stop offset="100%" stop-color="#04162b" stop-opacity="0.5" />
+            </radialGradient>
+            <linearGradient id="scaleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#5a8db0" />
+              <stop offset="50%" stop-color="#2d566f" />
+              <stop offset="100%" stop-color="#0e2a3f" />
+            </linearGradient>
+            <radialGradient id="hlGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+              <stop offset="60%" stop-color="#ffffff" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+            </radialGradient>
+            <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#27d0c4" stop-opacity="0.6" />
+              <stop offset="100%" stop-color="#27d0c4" stop-opacity="0" />
+            </radialGradient>
+            <clipPath id="eyeClip"><circle cx="120" cy="120" r="78" /></clipPath>
+          </defs>
+
+          <!-- 外圈辉光 -->
+          <circle cx="120" cy="120" r="118" fill="url(#glowGrad)" opacity="0.55" />
+
+          <!-- 鱼鳞环带（外圈） -->
+          <g fill="url(#scaleGrad)">
+            <circle cx="120" cy="120" r="115" fill="#0b2238" />
+            <!-- 环形鳞片，每 30 度一个 -->
+            <g>
+              <!-- 12 颗鳞片围绕眼眶 -->
+              <g transform="translate(120,120)">
+                <ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" />
+                <ellipse cx="0" cy="-95" rx="22" ry="14" fill="none" stroke="#5a8db0" stroke-width="0.6" opacity="0.5" transform="rotate(0)" />
+              </g>
+              <g transform="rotate(30 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(60 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(90 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(120 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(150 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(180 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(210 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(240 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(270 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(300 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+              <g transform="rotate(330 120 120) translate(120 25)"><ellipse cx="0" cy="-95" rx="22" ry="14" fill="url(#scaleGrad)" stroke="#0a1f33" stroke-width="1" /></g>
+            </g>
+          </g>
+
+          <!-- 巩膜（银色外环） -->
+          <circle cx="120" cy="120" r="92" fill="#c7d6e0" />
+          <circle cx="120" cy="120" r="92" fill="url(#scaleGrad)" opacity="0.35" />
+          <circle cx="120" cy="120" r="92" fill="none" stroke="#3a5868" stroke-width="1.5" opacity="0.6" />
+
+          <!-- 角膜边缘环 -->
+          <circle cx="120" cy="120" r="80" fill="#1a3a4d" />
+          <circle cx="120" cy="120" r="80" fill="none" stroke="#27d0c4" stroke-width="1.5" opacity="0.5" />
+
+          <!-- 虹膜 -->
+          <circle cx="120" cy="120" r="78" fill="url(#irisGrad)" />
+          <!-- 虹膜放射纹理 -->
+          <g clip-path="url(#eyeClip)" opacity="0.4">
+            <g stroke="#0a2a3a" stroke-width="0.8" fill="none">
+              <line x1="120" y1="42" x2="120" y2="198" />
+              <line x1="42" y1="120" x2="198" y2="120" />
+              <line x1="65" y1="65" x2="175" y2="175" />
+              <line x1="175" y1="65" x2="65" y2="175" />
+              <line x1="50" y1="100" x2="190" y2="140" />
+              <line x1="190" y1="100" x2="50" y2="140" />
+            </g>
+          </g>
+          <!-- 虹膜内圈渐变 -->
+          <circle cx="120" cy="120" r="55" fill="none" stroke="#27d0c4" stroke-width="2" opacity="0.4" />
+          <circle cx="120" cy="120" r="42" fill="none" stroke="#a8f5ee" stroke-width="1" opacity="0.3" />
+
+          <!-- 瞳孔 -->
+          <circle cx="120" cy="120" r="36" fill="url(#pupilGrad)" />
+
+          <!-- 角膜高光反射 -->
+          <circle cx="120" cy="120" r="78" fill="url(#corneaGrad)" />
+
+          <!-- 主高光（左上） -->
+          <ellipse cx="98" cy="92" rx="20" ry="14" fill="url(#hlGrad)" transform="rotate(-30 98 92)" />
+          <!-- 次高光（右下小点） -->
+          <circle cx="148" cy="148" r="5" fill="#ffffff" opacity="0.85" />
+          <circle cx="148" cy="148" r="2.5" fill="#ffffff" />
+
+          <!-- 顶部反光弧 -->
+          <path d="M 70 95 Q 120 70 170 95" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.35" stroke-linecap="round" />
+        </svg>
+      </div>
       <h1 class="hero-title" id="hero-title">Fish-Agent</h1>
       <p class="hero-tagline">一拍知鲜 · 吃得放心</p>
       <p class="hero-desc">上传鱼眼照片，AI 秒级分析新鲜度，让每一餐都安心</p>
       <div class="hero-badges" role="list">
         <span class="badge" role="listitem">
-          <span class="badge-icon">🐟</span>
+          <span class="badge-icon" aria-hidden="true">🐟</span>
           <span class="badge-num" data-count="99.23" data-suffix="%">0%</span> 准确率
         </span>
         <span class="badge" role="listitem">
-          <span class="badge-icon">⚡</span>
+          <span class="badge-icon" aria-hidden="true">⚡</span>
           <span class="badge-num" data-count="16" data-suffix=" 节点">0</span> 工作流
         </span>
         <span class="badge" role="listitem">
-          <span class="badge-icon">🔬</span>
+          <span class="badge-icon" aria-hidden="true">🔬</span>
           <span class="badge-num" data-count="3" data-suffix=" 级">0</span> 分类
         </span>
       </div>
@@ -2210,7 +272,7 @@
           也可按 <strong>Ctrl + V</strong> 粘贴截图
         </p>
         <span class="upload-cta">选择照片</span>
-        <div class="onboarding-tip" id="onboardingTip" hidden>点击或拖拽鱼眼照片到此处 📸</div>
+        <div class="onboarding-tip" id="onboardingTip" hidden>点击或拖拽鱼眼照片到此处 <span aria-hidden="true">📸</span></div>
       </div>
 
       <!-- 预览区（上传后显示） -->
@@ -2219,7 +281,7 @@
           <div class="preview-image-wrap">
             <div class="preview-image-box" id="previewImageBox">
               <div class="preview-loading" id="previewLoading" aria-hidden="true"></div>
-              <img id="previewImage" alt="鱼眼照片预览" hidden />
+              <img id="previewImage" alt="鱼眼照片预览" width="500" height="375" hidden />
               <!-- 扫描动画覆盖层 -->
               <div class="scan-overlay" aria-hidden="true">
                 <div class="scan-grid"></div>
@@ -2230,17 +292,17 @@
               </div>
             </div>
             <div class="preview-info" id="previewInfo">
-              <span>📷 <strong id="infoName">—</strong></span>
-              <span>📏 <strong id="infoSize">—</strong></span>
-              <span>🔲 <strong id="infoDim">—</strong></span>
+              <span><span aria-hidden="true">📷</span> <strong id="infoName">—</strong></span>
+              <span><span aria-hidden="true">📏</span> <strong id="infoSize">—</strong></span>
+              <span><span aria-hidden="true">🔲</span> <strong id="infoDim">—</strong></span>
             </div>
           </div>
           <div class="preview-actions">
             <button class="btn-ghost" id="clearBtn" type="button" aria-label="清除当前图片并重新选择">
-              ✕ 重新选择
+              <span aria-hidden="true">✕</span> 重新选择
             </button>
             <button class="btn-ghost btn-reupload-small" id="reuploadBtn" type="button" aria-label="重新上传一张照片">
-              ↻ 换一张
+              <span aria-hidden="true">↻</span> 换一张
             </button>
           </div>
         </div>
@@ -2316,38 +378,55 @@
           <span class="offline-text">当前为离线演示模式。AI 分析服务暂时不可用，展示的是模拟分析结果。</span>
         </div>
 
+        <!-- Session 9：置信度警告横幅 -->
+        <div class="confidence-warning confidence-warning-mid" id="confidenceWarningMid" hidden>
+          <span class="warning-icon" aria-hidden="true">⚠️</span>
+          <span class="warning-text">识别置信度中等（<span id="warningMidConf">—</span>%）。建议在光线充足的环境下重新拍摄鱼眼特写照片，以获得更准确的分析结果。</span>
+          <button class="warning-dismiss" id="warningMidDismiss" type="button" aria-label="关闭警告">✕</button>
+        </div>
+        <div class="confidence-warning confidence-warning-low" id="confidenceWarningLow" hidden>
+          <span class="warning-icon" aria-hidden="true">🚨</span>
+          <span class="warning-text">识别置信度较低（<span id="warningLowConf">—</span>%）。AI 可能无法准确判断，请确认上传的是清晰的鱼眼特写照片。</span>
+          <button class="warning-dismiss" id="warningLowDismiss" type="button" aria-label="关闭警告">✕</button>
+        </div>
+
         <!-- 工具栏：导出按钮 -->
         <div class="report-toolbar">
-          <button class="btn-export" id="exportJsonBtn" type="button" aria-label="导出 JSON 报告">📄 导出 JSON</button>
-          <button class="btn-export" id="exportImgBtn" type="button" aria-label="保存报告截图">📸 保存截图</button>
+          <button class="btn-export" id="exportJsonBtn" type="button" aria-label="导出 JSON 报告"><span aria-hidden="true">📄</span> 导出 JSON</button>
+          <button class="btn-export" id="exportImgBtn" type="button" aria-label="保存报告截图"><span aria-hidden="true">📸</span> 保存截图</button>
         </div>
 
         <!-- Tab 导航 -->
         <div class="report-tabs" role="tablist" aria-label="分析报告视图">
-          <button class="report-tab is-active" role="tab" data-tab="overview" aria-selected="true">📊 概览</button>
-          <button class="report-tab" role="tab" data-tab="vision" aria-selected="false">👁 AI 视觉分析</button>
-          <button class="report-tab" role="tab" data-tab="detail" aria-selected="false">📋 详细报告</button>
-          <button class="report-tab" role="tab" data-tab="advice" aria-selected="false">💡 处理建议</button>
+          <button class="report-tab is-active" role="tab" data-tab="overview" aria-selected="true"><span aria-hidden="true">📊</span> 概览</button>
+          <button class="report-tab" role="tab" data-tab="vision" aria-selected="false"><span aria-hidden="true">👁</span> AI 视觉分析</button>
+          <button class="report-tab" role="tab" data-tab="detail" aria-selected="false"><span aria-hidden="true">📋</span> 详细报告</button>
+          <button class="report-tab" role="tab" data-tab="advice" aria-selected="false"><span aria-hidden="true">💡</span> 处理建议</button>
         </div>
 
         <!-- Tab 1：概览 -->
         <div class="report-tabpane is-active" data-pane="overview" role="tabpanel">
+          <!-- Session 9：工作流路径徽标 -->
+          <div class="workflow-badge" id="workflowBadge" hidden>
+            <span class="workflow-badge-icon" aria-hidden="true">🔀</span>
+            <span class="workflow-badge-label" id="workflowBadgeLabel">—</span>
+          </div>
           <!-- 关键指标摘要行 -->
           <div class="metrics-row">
             <div class="metric-item">
-              <div class="metric-label">👁 鱼眼外观</div>
+              <div class="metric-label"><span aria-hidden="true">👁</span> 鱼眼外观</div>
               <div class="metric-val" id="metricAppearance">—</div>
             </div>
             <div class="metric-item">
-              <div class="metric-label">📊 置信度</div>
+              <div class="metric-label"><span aria-hidden="true">📊</span> 置信度</div>
               <div class="metric-val" id="metricConfidence">—</div>
             </div>
             <div class="metric-item">
-              <div class="metric-label">⏱ 分析耗时</div>
+              <div class="metric-label"><span aria-hidden="true">⏱</span> 分析耗时</div>
               <div class="metric-val" id="metricDuration">—</div>
             </div>
             <div class="metric-item">
-              <div class="metric-label">📅 分析时间</div>
+              <div class="metric-label"><span aria-hidden="true">📅</span> 分析时间</div>
               <div class="metric-val" id="metricTime">—</div>
             </div>
           </div>
@@ -2440,9 +519,9 @@
             <p class="panel-title">原图 vs AI 关注区域（拖动滑块对比）</p>
             <!-- 图像对比滑块 -->
             <div class="compare-slider" id="compareSlider">
-              <img id="compareOriginal" alt="原图" src="" />
+              <img id="compareOriginal" alt="原图" src="" width="500" height="500" />
               <div class="comp-overlay" id="compOverlay" style="clip-path: inset(0 50% 0 0);">
-                <img id="compareHeatmap" alt="Grad-CAM 热力图" src="" />
+                <img id="compareHeatmap" alt="Grad-CAM 热力图" src="" width="500" height="500" />
               </div>
               <span class="comp-label left">原图</span>
               <span class="comp-label right">热力图</span>
@@ -2500,27 +579,46 @@
 
         <!-- Tab 4：处理建议（手风琴） -->
         <div class="report-tabpane" data-pane="advice" role="tabpanel">
-          <div class="advice-grid" id="adviceGrid">
-            <div class="advice-card">
+          <div class="advice-grid advice-grid-five" id="adviceGrid">
+            <div class="advice-card advice-card-expandable" data-cat="storage">
               <div class="advice-head">
                 <span class="advice-icon store" aria-hidden="true">❄</span>
                 <span class="advice-title">储存建议</span>
+                <span class="advice-expand-icon">▸</span>
               </div>
-              <p class="advice-text" id="adviceStore">冷藏 0–4°C 保鲜，避免反复解冻。当前状态可存放 24 小时。</p>
+              <div class="advice-body"><ul id="adviceStorage"></ul></div>
             </div>
-            <div class="advice-card">
+            <div class="advice-card advice-card-expandable" data-cat="consumption">
               <div class="advice-head">
                 <span class="advice-icon eat" aria-hidden="true">🍽</span>
                 <span class="advice-title">食用建议</span>
+                <span class="advice-expand-icon">▸</span>
               </div>
-              <p class="advice-text" id="adviceEat">建议尽快食用以获得最佳口感，清蒸或刺身均为优选。</p>
+              <div class="advice-body"><ul id="adviceConsumption"></ul></div>
             </div>
-            <div class="advice-card">
+            <div class="advice-card advice-card-expandable" data-cat="handling">
+              <div class="advice-head">
+                <span class="advice-icon handle" aria-hidden="true">🔪</span>
+                <span class="advice-title">处理建议</span>
+                <span class="advice-expand-icon">▸</span>
+              </div>
+              <div class="advice-body"><ul id="adviceHandling"></ul></div>
+            </div>
+            <div class="advice-card advice-card-expandable" data-cat="safety">
               <div class="advice-head">
                 <span class="advice-icon safe" aria-hidden="true">⚠</span>
-                <span class="advice-title">安全提示</span>
+                <span class="advice-title">安全警告</span>
+                <span class="advice-expand-icon">▸</span>
               </div>
-              <p class="advice-text" id="adviceSafe">鱼眼清澈、鳃部鲜红为新鲜标志。如出现浑浊或异味请勿食用。</p>
+              <div class="advice-body"><ul id="adviceSafety"></ul></div>
+            </div>
+            <div class="advice-card advice-card-expandable" data-cat="best">
+              <div class="advice-head">
+                <span class="advice-icon best" aria-hidden="true">⭐</span>
+                <span class="advice-title">最佳实践</span>
+                <span class="advice-expand-icon">▸</span>
+              </div>
+              <div class="advice-body"><ul id="adviceBest"></ul></div>
             </div>
           </div>
         </div>
@@ -2530,197 +628,20 @@
       <!-- ============ 历史记录区 ============ -->
       <div class="history-section">
         <div class="history-head">
-          <h3 class="history-title">📋 历史记录</h3>
-          <label class="history-filter">
-            <input type="checkbox" id="favFilter" /> 仅显示收藏
-          </label>
+          <h3 class="history-title"><span aria-hidden="true">📋</span> 历史记录</h3>
+        </div>
+        <div class="history-filter-bar">
+          <input type="text" id="historySearch" class="history-search-input" placeholder="搜索历史记录..." aria-label="搜索历史记录" />
+          <select id="historyFilter" class="history-filter-select" aria-label="过滤历史记录">
+            <option value="all">全部</option>
+            <option value="high">高度新鲜</option>
+            <option value="mid">新鲜</option>
+            <option value="low">不新鲜</option>
+            <option value="favorite">⭐ 收藏</option>
+          </select>
         </div>
         <div class="history-list" id="historyList">
           <div class="history-empty" id="historyEmpty">暂无历史记录，上传第一张鱼眼照片开始分析吧！</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 介绍区 ============ -->
-    <section id="intro" class="intro-section reveal" data-delay="3" aria-labelledby="intro-title">
-      <h2 class="intro-heading" id="intro-title">关于 Fish-Agent</h2>
-      <p class="intro-sub">用一张鱼眼照片，让水产品新鲜度判断从"凭经验"变成"看证据"。</p>
-
-      <!-- 板块 1：痛点 vs 解法 -->
-      <div class="intro-block">
-        <div class="compare-pain">
-          <div class="pain-card pain">
-            <div class="pain-card-head">
-              <span class="pain-icon" aria-hidden="true">!</span>
-              <span>当前痛点</span>
-            </div>
-            <ul class="pain-list">
-              <li>肉眼经验依赖个人技术，新手难掌握</li>
-              <li>化学检测成本高、周期长，且<strong>破坏样品</strong></li>
-              <li>现有工具只给结论，不告诉"为什么"和"怎么办"</li>
-            </ul>
-          </div>
-          <div class="pain-card solution">
-            <div class="pain-card-head">
-              <span class="pain-icon" aria-hidden="true">✓</span>
-              <span>Fish-Agent 解法</span>
-            </div>
-            <ul class="pain-list">
-              <li>鱼眼照片入口，<strong>低成本非破坏式</strong></li>
-              <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong></li>
-              <li>Grad-CAM 热力图解释"为什么"，结构化报告给出"怎么办"</li>
-              <li>置信度驱动自适应分支，低置信度主动提示重拍</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- 板块 2：三类用户 -->
-      <div class="intro-block">
-        <h3 class="intro-heading" style="font-size:20px;">面向三类用户</h3>
-        <div class="users-grid">
-          <div class="user-card">
-            <div class="user-icon" aria-hidden="true">🛒</div>
-            <h4 class="user-title">消费者</h4>
-            <p class="user-text">菜市场 / 超市买鱼时拍照即知新鲜度，告别"凭手感挑鱼"的盲选。</p>
-          </div>
-          <div class="user-card">
-            <div class="user-icon" aria-hidden="true">🐟</div>
-            <h4 class="user-title">商贩与采购</h4>
-            <p class="user-text">批量进货验收，一键导出 CSV 汇总，留档对账，降低退货纠纷。</p>
-          </div>
-          <div class="user-card">
-            <div class="user-icon" aria-hidden="true">📋</div>
-            <h4 class="user-title">质检监管</h4>
-            <p class="user-text">生成 PDF 报告存档，含结论、置信度、建议与时间戳，全程可追溯。</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 板块 3：方案对比表格 -->
-      <div class="intro-block">
-        <h3 class="intro-heading" style="font-size:20px;">方案对比</h3>
-        <div class="table-wrap">
-          <table class="compare-table">
-            <thead>
-              <tr>
-                <th scope="col">维度</th>
-                <th scope="col">肉眼经验</th>
-                <th scope="col">化学检测</th>
-                <th scope="col">Fish-Agent</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>成本</td>
-                <td>免费但靠人</td>
-                <td>高</td>
-                <td class="highlight">极低</td>
-              </tr>
-              <tr>
-                <td>速度</td>
-                <td>因人而异</td>
-                <td>数小时</td>
-                <td class="highlight">数秒</td>
-              </tr>
-              <tr>
-                <td>破坏样品</td>
-                <td>否</td>
-                <td>是</td>
-                <td class="highlight">否</td>
-              </tr>
-              <tr>
-                <td>可解释</td>
-                <td>靠经验</td>
-                <td>数据难懂</td>
-                <td class="highlight">Grad-CAM + 文字</td>
-              </tr>
-              <tr>
-                <td>可留档</td>
-                <td>无法</td>
-                <td>纸质</td>
-                <td class="highlight">PDF / JSON</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 板块 4：工作流时间轴 -->
-      <div class="intro-block">
-        <h3 class="intro-heading" style="font-size:20px;">工作流架构</h3>
-        <p class="intro-sub">16 节点 · 14 步 · 置信度驱动自适应分支。</p>
-        <div class="workflow">
-          <div class="workflow-node">
-            <div class="workflow-num">1</div>
-            <div class="workflow-body">
-              <p class="workflow-name">图像上传</p>
-              <p class="workflow-desc">接收鱼眼照片并记录上传时间，进入处理流水线。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">2</div>
-            <div class="workflow-body">
-              <p class="workflow-name">质量检测</p>
-              <p class="workflow-desc">判断是否鱼类、是否含鱼眼、图像质量是否合格，不合格即提示重拍。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">3</div>
-            <div class="workflow-body">
-              <p class="workflow-name">鱼眼区域识别</p>
-              <p class="workflow-desc">识别鱼眼、鳃部、体表三个关键区域，为多区域融合做准备。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">4</div>
-            <div class="workflow-body">
-              <p class="workflow-name">FishFreshNetV1 分类</p>
-              <p class="workflow-desc">优先调用专用模型三分类（高度新鲜 / 新鲜 / 不新鲜），失败回退多模态大模型。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">5</div>
-            <div class="workflow-body">
-              <p class="workflow-name">置信度分支 <span class="workflow-branch high">≥0.8</span> <span class="workflow-branch mid">0.5–0.8</span> <span class="workflow-branch low">&lt;0.5</span></p>
-              <p class="workflow-desc">高置信直出，中置信走多区域融合，低置信由大模型复核仲裁。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">6</div>
-            <div class="workflow-body">
-              <p class="workflow-name">Grad-CAM 热力图</p>
-              <p class="workflow-desc">调用真实 Grad-CAM 服务生成关注区域解释，失败时生成降级关注区域说明。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">7</div>
-            <div class="workflow-body">
-              <p class="workflow-name">结构化分析</p>
-              <p class="workflow-desc">鱼眼外观、清澈度、颜色、纹理与质量指标的结构化输出。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">8</div>
-            <div class="workflow-body">
-              <p class="workflow-name">时序预测</p>
-              <p class="workflow-desc">新鲜度趋势与剩余保质时间预测，给出最佳食用窗口。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">9</div>
-            <div class="workflow-body">
-              <p class="workflow-name">报告生成</p>
-              <p class="workflow-desc">结构化报告与知识图谱匹配，可导出 PDF / JSON。</p>
-            </div>
-          </div>
-          <div class="workflow-node">
-            <div class="workflow-num">10</div>
-            <div class="workflow-body">
-              <p class="workflow-name">建议输出</p>
-              <p class="workflow-desc">储存、食用、处理、安全四类建议，按新鲜度等级动态生成。</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -2752,7 +673,23 @@
   </footer>
 
   <!-- ============ Toast 容器 ============ -->
-  <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ============ Session 9：低置信度弹窗 ============ -->
+  <div class="confidence-modal-overlay" id="confidenceModal" hidden>
+    <div class="confidence-modal" role="alertdialog" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+      <div class="confidence-modal-icon" aria-hidden="true">🚨</div>
+      <h3 class="confidence-modal-title" id="modalTitle">输入照片可能并非鱼眼图像</h3>
+      <p class="confidence-modal-desc" id="modalDesc">
+        AI 检测置信度极低（<span id="modalConf">—</span>%），这通常意味着上传的照片可能不是清晰的鱼眼特写。<br/>
+        建议重新拍摄一张鱼眼清晰可见的照片。
+      </p>
+      <div class="confidence-modal-actions">
+        <button class="btn-modal-primary" id="modalRetry" type="button">📸 重新拍摄</button>
+        <button class="btn-modal-secondary" id="modalView" type="button">仍要查看结果</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     "use strict";
@@ -2907,6 +844,36 @@
       }
       selectedFile = file;
       showPreview(file);
+    }
+
+    /**
+     * Session 7：创建优化预览图（压缩到 800px 宽，仅用于未来优化）
+     * 当前 showPreview 仍使用 FileReader，此函数预留给后续切换
+     */
+    async function createOptimizedPreview(file) {
+      try {
+        const bitmap = await createImageBitmap(file);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const maxWidth = 800;
+        const scale = Math.min(1, maxWidth / bitmap.width);
+        canvas.width = bitmap.width * scale;
+        canvas.height = bitmap.height * scale;
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        return new Promise((resolve) => {
+          canvas.toBlob((blob) => {
+            resolve({
+              previewUrl: blob ? URL.createObjectURL(blob) : null,
+              width: canvas.width,
+              height: canvas.height,
+              originalSize: file.size,
+              compressedSize: blob ? blob.size : 0
+            });
+          }, 'image/jpeg', 0.85);
+        });
+      } catch (_) {
+        return { previewUrl: null, width: 0, height: 0, originalSize: file.size, compressedSize: 0 };
+      }
     }
 
     /**
@@ -3353,7 +1320,7 @@
 
       try {
         // Session 5：离线模式走模拟流程
-        const data = offlineMode ? await simulateAnalysis() : await callPredictApi(selectedFile);
+        const data = offlineMode ? await simulateAnalysis() : await callPredictApiWithRetry(selectedFile);
         lastAnalysisResult = data;
         const durationSec = (performance.now() - analysisStartTime) / 1000;
         lastAnalysisResult.__processingTime = durationSec;
@@ -3373,6 +1340,23 @@
       } finally {
         analysisInProgress = false;
         currentAbortController = null;
+      }
+    }
+
+    /**
+     * Session 10：指数退避重试包装（1s → 2s → 4s）
+     */
+    const MAX_RETRIES = 3;
+    const RETRY_BASE_DELAY = 1000;
+    async function callPredictApiWithRetry(file, attempt = 1) {
+      try {
+        return await callPredictApi(file);
+      } catch (err) {
+        if (attempt >= MAX_RETRIES) throw err;
+        const delay = RETRY_BASE_DELAY * Math.pow(2, attempt - 1);
+        console.log(`🔄 第 ${attempt} 次重试，${delay}ms 后重试...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return callPredictApiWithRetry(file, attempt + 1);
       }
     }
 
@@ -3481,8 +1465,10 @@
       return new Promise((resolve) => {
         const delay = 2000 + Math.random() * 1000;
         setTimeout(() => {
+          // Session 9：覆盖高/中/低三种置信度，让评审能看到全部交互效果
           const results = [
             {
+              // 高置信度（≥80%）—— 无警告
               freshness_level: "高度新鲜",
               freshness_label: 0,
               confidence_score: 0.9785,
@@ -3491,19 +1477,21 @@
               timestamp: new Date().toISOString(),
             },
             {
+              // 中置信度（60%-75%）—— 触发黄色横幅
               freshness_level: "新鲜",
               freshness_label: 1,
-              confidence_score: 0.8234,
-              all_probabilities: { "高度新鲜": 0.1023, "新鲜": 0.8234, "不新鲜": 0.0743 },
+              confidence_score: 0.6834,
+              all_probabilities: { "高度新鲜": 0.1523, "新鲜": 0.6834, "不新鲜": 0.1643 },
               description: "鱼眼基本清澈，角膜略有浑浊，整体新鲜度良好。建议尽快食用。",
               timestamp: new Date().toISOString(),
             },
             {
+              // 低置信度（<60%）—— 触发红色弹窗
               freshness_level: "不新鲜",
               freshness_label: 2,
-              confidence_score: 0.9102,
-              all_probabilities: { "高度新鲜": 0.0015, "新鲜": 0.0883, "不新鲜": 0.9102 },
-              description: "鱼眼浑浊，角膜不透明，表面失去光泽。建议谨慎对待，不建议食用。",
+              confidence_score: 0.4205,
+              all_probabilities: { "高度新鲜": 0.0815, "新鲜": 0.2880, "不新鲜": 0.4205 },
+              description: "鱼眼浑浊，角膜不透明，AI 置信度较低，建议重新拍摄。",
               timestamp: new Date().toISOString(),
             },
           ];
@@ -3549,19 +1537,128 @@
 
       updateFreshnessCard(level, label, confidence, isSimulated);
       updateConfidenceGauge(confidence);
-      updateProbabilityBars(probs);
+      updateProbabilityBars(probs, label);
       updateComparisonView(heatmapBase64);
       updateDescription(description, confidence);
       updateRecommendations(label, confidence);
       updateMetrics(pred, durationSec);
+
+      // Session 9：置信度自适应前端机制
+      handleConfidenceAdaptive(confidence);
 
       resultsPanel.classList.remove("results-hidden");
       resultsPanel.classList.add("results-visible");
       stopScanning();
     }
 
+    // ============ Session 9：置信度自适应前端机制 ============
+
     /**
-     * 更新新鲜度等级卡片（文字 + 颜色）
+     * 置信度自适应主逻辑：仪表盘颜色 + 工作流徽标 + 警告横幅 + 弹窗
+     */
+    function handleConfidenceAdaptive(confidence) {
+      const pctStr = (confidence * 100).toFixed(1);
+
+      // 1. 更新仪表盘数字颜色
+      if (gaugeNum) {
+        gaugeNum.style.color = "";
+        if (confidence >= 0.8) gaugeNum.style.color = "var(--fresh, #27d0c4)";
+        else if (confidence >= 0.6) gaugeNum.style.color = "var(--mid, #f5b54a)";
+        else gaugeNum.style.color = "var(--bad, #ef5b5b)";
+      }
+
+      // 2. 更新工作流徽标
+      updateWorkflowBadge(confidence);
+
+      // 3. 隐藏所有警告
+      const warnMid = document.getElementById("confidenceWarningMid");
+      const warnLow = document.getElementById("confidenceWarningLow");
+      if (warnMid) warnMid.hidden = true;
+      if (warnLow) warnLow.hidden = true;
+
+      // 4. 根据置信度区间显示对应警告
+      if (confidence < 0.6) {
+        // < 60%：红色横幅 + 弹窗
+        const lowConfSpan = document.getElementById("warningLowConf");
+        if (lowConfSpan) lowConfSpan.textContent = pctStr;
+        if (warnLow) warnLow.hidden = false;
+        showConfidenceModal(confidence);
+      } else if (confidence < 0.75) {
+        // 60% - 75%：黄色横幅
+        const midConfSpan = document.getElementById("warningMidConf");
+        if (midConfSpan) midConfSpan.textContent = pctStr;
+        if (warnMid) warnMid.hidden = false;
+      }
+      // ≥ 75%：不显示任何警告
+
+      // 5. 概览 Tab 的置信度数字也同步变色
+      if (metricConfidence) {
+        metricConfidence.style.color = "";
+        if (confidence >= 0.8) metricConfidence.style.color = "var(--fresh, #27d0c4)";
+        else if (confidence >= 0.6) metricConfidence.style.color = "var(--mid, #f5b54a)";
+        else metricConfidence.style.color = "var(--bad, #ef5b5b)";
+      }
+    }
+
+    /**
+     * 更新工作流路径徽标
+     */
+    function updateWorkflowBadge(confidence) {
+      const badge = document.getElementById("workflowBadge");
+      const badgeLabel = document.getElementById("workflowBadgeLabel");
+      if (!badge || !badgeLabel) return;
+
+      badge.classList.remove("badge-high", "badge-mid", "badge-low");
+      badge.hidden = false;
+
+      if (confidence >= 0.8) {
+        badge.classList.add("badge-high");
+        badgeLabel.textContent = "高置信度 · 鱼眼特征明确，FishFreshNetV1 直接输出结果";
+      } else if (confidence >= 0.6) {
+        badge.classList.add("badge-mid");
+        badgeLabel.textContent = "中置信度 · 已触发多区域融合分析（鱼眼+鳃部+体表交叉验证）";
+      } else {
+        badge.classList.add("badge-low");
+        badgeLabel.textContent = "低置信度 · 已触发备用模型复核（多模态大模型二次判定）";
+      }
+    }
+
+    /**
+     * 低置信度弹窗
+     */
+    function showConfidenceModal(confidence) {
+      const modal = document.getElementById("confidenceModal");
+      const confSpan = document.getElementById("modalConf");
+      if (!modal) return;
+      if (confSpan) confSpan.textContent = (confidence * 100).toFixed(1);
+      modal.hidden = false;
+
+      const retryBtn = document.getElementById("modalRetry");
+      const viewBtn = document.getElementById("modalView");
+
+      if (retryBtn) {
+        retryBtn.onclick = () => {
+          modal.hidden = true;
+          clearImage();
+          const uploadZoneEl = document.getElementById("uploadZone");
+          if (uploadZoneEl) uploadZoneEl.scrollIntoView({ behavior: "smooth" });
+        };
+      }
+      if (viewBtn) {
+        viewBtn.onclick = () => { modal.hidden = true; };
+      }
+
+      const escHandler = (e) => {
+        if (e.key === "Escape") {
+          modal.hidden = true;
+          document.removeEventListener("keydown", escHandler);
+        }
+      };
+      document.addEventListener("keydown", escHandler);
+    }
+
+    /**
+     * 更新鲜度等级卡片（文字 + 颜色）
      * Session 5：离线模式追加 [模拟数据] 标签
      */
     function updateFreshnessCard(level, label, confidence, isSimulated) {
@@ -3617,14 +1714,24 @@
 
     /**
      * 更新三类概率分布条
+     * Session 9：最高概率条添加 is-dominant 发光效果
      */
-    function updateProbabilityBars(probs) {
-      const map = { "高度新鲜": { bar: probBarHigh, val: probValHigh }, "新鲜": { bar: probBarMid, val: probValMid }, "不新鲜": { bar: probBarLow, val: probValLow } };
+    function updateProbabilityBars(probs, dominantLabel) {
+      const map = { "高度新鲜": { bar: probBarHigh, val: probValHigh, row: document.querySelector(".prob-row.high") }, "新鲜": { bar: probBarMid, val: probValMid, row: document.querySelector(".prob-row.mid") }, "不新鲜": { bar: probBarLow, val: probValLow, row: document.querySelector(".prob-row.low") } };
+      // 先清除所有 dominant
+      document.querySelectorAll(".prob-row").forEach((r) => r.classList.remove("is-dominant"));
+      // 找到最高概率项
+      let maxName = "", maxVal = -1;
       for (const [name, els] of Object.entries(map)) {
         const p = typeof probs[name] === "number" ? probs[name] : 0;
+        if (p > maxVal) { maxVal = p; maxName = name; }
         const pct = (p * 100).toFixed(1);
         els.bar.style.width = `${pct}%`;
         els.val.textContent = `${pct}%`;
+      }
+      // 给最高概率行加发光
+      if (map[maxName] && map[maxName].row) {
+        map[maxName].row.classList.add("is-dominant");
       }
     }
 
@@ -3718,39 +1825,40 @@
      * 根据新鲜度等级动态生成建议
      */
     function updateRecommendations(label, confidence) {
-      let store = "", eat = "", safe = "";
-      if (label === 0) {
-        store = "建议 0–4°C 冷藏保存，避免反复解冻。";
-        eat = "建议在 24–48 小时内食用以获得最佳口感。";
-        safe = "鱼眼清澈，可放心食用。";
-      } else if (label === 1) {
-        store = "建议 0–4°C 冷藏，如需长期保存请冷冻。";
-        eat = "建议在 12–24 小时内食用。";
-        safe = "鱼眼基本清澈，可正常食用。";
-      } else if (label === 2) {
-        store = "不建议继续储存。";
-        eat = "不建议食用，可能存在食品安全风险。";
-        safe = "鱼眼浑浊，请谨慎对待。";
-      } else {
-        store = "暂无建议。";
-        eat = "暂无建议。";
-        safe = "暂无建议。";
-      }
-      adviceStore.textContent = store;
-      adviceEat.textContent = eat;
-      adviceSafe.textContent = safe;
-
-      // 低置信度额外提示
-      const existing = adviceGrid.querySelector(".advice-low-conf");
-      if (confidence < 0.5 && !existing) {
-        const card = document.createElement("div");
-        card.className = "advice-card advice-low-conf";
-        card.style.borderColor = "rgba(239,91,91,0.4)";
-        card.innerHTML = `<div class="advice-head"><span class="advice-icon safe" aria-hidden="true">⚠</span><span class="advice-title">置信度提示</span></div><p class="advice-text">本结果置信度较低，建议重新拍摄清晰的鱼眼照片后再次分析。</p>`;
-        adviceGrid.appendChild(card);
-      } else if (confidence >= 0.5 && existing) {
-        existing.remove();
-      }
+      // Session 10：5 大类建议（对齐后端 recommendation_generation 节点）
+      const defaultRecs = {
+        0: {
+          storage: ["0–4°C 冷藏保存", "避免反复解冻", "可存放 24–48 小时"],
+          consumption: ["尽快食用获得最佳口感", "清蒸或刺身为优选", "搭配柠檬汁去腥提鲜"],
+          handling: ["从冰箱取出后直接处理", "用利刀去除鱼鳞", "清理内脏时保持鱼眼完整"],
+          safety: ["鱼眼清澈，可放心食用", "注意检查鳃部是否鲜红", "食用前确认无异味"],
+          best: ["购买后 2 小时内处理最佳", "处理前后勤洗手", "使用专用砧板避免交叉污染"]
+        },
+        1: {
+          storage: ["0–4°C 冷藏", "如需长期保存请冷冻", "建议 12 小时内食用"],
+          consumption: ["建议 12–24 小时内食用", "推荐红烧或煎炸", "充分加热至中心温度 70°C 以上"],
+          handling: ["解冻后在冷水中冲洗", "去除鱼鳃和内脏", "切块烹饪更易入味"],
+          safety: ["鱼眼基本清澈，可正常食用", "注意观察是否有异味", "烹饪时间适当延长"],
+          best: ["尽快处理不宜久放", "冷冻保存前用保鲜膜包裹", "解冻后不要再次冷冻"]
+        },
+        2: {
+          storage: ["不建议继续储存", "如必须保存请深度冷冻", "尽快处理或丢弃"],
+          consumption: ["不建议食用", "可能存在食品安全风险", "如必须食用需充分高温烹饪"],
+          handling: ["佩戴手套处理", "避免接触其他食材", "处理工具需彻底消毒"],
+          safety: ["⚠ 鱼眼浑浊，请谨慎对待", "如有异味立即丢弃", "孕妇和儿童禁止食用"],
+          best: ["购买时注意辨别新鲜度", "选择信誉良好的商家", "保留购买凭证以便追溯"]
+        }
+      };
+      const recs = defaultRecs[label] || defaultRecs[1];
+      const fillList = (ulId, items) => {
+        const ul = document.getElementById(ulId);
+        if (ul) ul.innerHTML = items.map(t => `<li>${t}</li>`).join("");
+      };
+      fillList("adviceStorage", recs.storage);
+      fillList("adviceConsumption", recs.consumption);
+      fillList("adviceHandling", recs.handling);
+      fillList("adviceSafety", recs.safety);
+      fillList("adviceBest", recs.best);
     }
 
     /**
@@ -3763,8 +1871,12 @@
       resultsPanel.classList.add("results-hidden");
       resultsEmpty.style.display = "block";
       if (resultHint) resultHint.textContent = "上传后将在此展示";
-      const lowConf = adviceGrid?.querySelector(".advice-low-conf");
-      if (lowConf) lowConf.remove();
+      // Session 10：清除建议折叠状态
+      adviceGrid?.querySelectorAll(".advice-card-expandable.is-expanded").forEach(c => {
+        c.classList.remove("is-expanded");
+        const icon = c.querySelector(".advice-expand-icon");
+        if (icon) icon.textContent = "▸";
+      });
       resetAnalyzeButton();
     }
 
@@ -3775,7 +1887,7 @@
     const HISTORY_KEY = "fish-agent-history";
     const FAVORITES_KEY = "fish-agent-favorites";
     const ONBOARDING_KEY = "fish-agent-onboarded";
-    const MAX_HISTORY = 20;
+    const MAX_HISTORY = 50;
     let analysisStartTime = 0; // 记录分析开始时间戳
 
     // ---- Tab 切换 ----
@@ -3892,7 +2004,15 @@
       // 裁剪到最新 MAX_HISTORY 条
       if (hist.length > MAX_HISTORY) hist.length = MAX_HISTORY;
       saveHistory(hist);
-      renderHistory();
+      // Session 10：增量渲染（不重渲染整个列表）
+      const item = createHistoryItemElement(record, loadFavorites().includes(record.id));
+      if (historyList.querySelector(".history-empty")) {
+        historyList.innerHTML = "";
+      }
+      historyList.insertBefore(item, historyList.firstChild);
+      while (historyList.children.length > MAX_HISTORY) {
+        historyList.removeChild(historyList.lastChild);
+      }
       return record;
     }
 
@@ -3925,11 +2045,41 @@
     /**
      * 格式化时间为本地可读字符串
      */
+    const historyTimeFmt = new Intl.DateTimeFormat("zh-CN", {
+      month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false
+    });
     function formatHistoryTime(iso) {
       try {
         const d = new Date(iso);
-        return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        if (isNaN(d.getTime())) return "—";
+        return historyTimeFmt.format(d);
       } catch (_) { return "—"; }
+    }
+
+    /**
+     * Session 10：创建单条历史记录 DOM 元素（增量渲染用）
+     */
+    function createHistoryItemElement(r, isFav) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.dataset.id = r.id;
+      const cls = r.freshnessLabel === 0 ? "high" : r.freshnessLabel === 1 ? "mid" : r.freshnessLabel === 2 ? "low" : "mid";
+      const conf = ((r.confidenceScore || 0) * 100).toFixed(1);
+      item.innerHTML = `
+        <img class="history-thumb" alt="缩略图" src="${r.thumbnail || ""}" width="56" height="56" loading="lazy" />
+        <div class="history-info">
+          <div class="history-row1">
+            <span class="history-badge ${cls}">${r.freshnessLevel}</span>
+            <span class="history-conf">${conf}%</span>
+          </div>
+          <div class="history-time">${formatHistoryTime(r.timestamp)}</div>
+        </div>
+        <div class="history-actions">
+          <button class="history-btn fav ${isFav ? "is-fav" : ""}" aria-label="收藏" data-act="fav">${isFav ? "★" : "☆"}</button>
+          <button class="history-btn del" aria-label="删除" data-act="del">🗑</button>
+        </div>
+      `;
+      return item;
     }
 
     /**
@@ -3939,39 +2089,36 @@
       if (!historyList) return;
       const hist = loadHistory();
       const favs = loadFavorites();
-      const onlyFav = favFilter?.checked;
-      const filtered = onlyFav ? hist.filter((r) => favs.includes(r.id)) : hist;
+      const favSet = new Set(favs);
+
+      // Session 10：搜索 + 过滤
+      const searchTerm = (document.getElementById("historySearch")?.value || "").toLowerCase().trim();
+      const filterVal = document.getElementById("historyFilter")?.value || "all";
+
+      let filtered = hist;
+      if (filterVal === "favorite") {
+        filtered = filtered.filter(r => favSet.has(r.id));
+      } else if (filterVal !== "all") {
+        const labelMap = { high: 0, mid: 1, low: 2 };
+        filtered = filtered.filter(r => r.freshnessLabel === labelMap[filterVal]);
+      }
+      if (searchTerm) {
+        filtered = filtered.filter(r =>
+          (r.freshnessLevel || "").toLowerCase().includes(searchTerm) ||
+          (r.description || "").toLowerCase().includes(searchTerm) ||
+          formatHistoryTime(r.timestamp).toLowerCase().includes(searchTerm)
+        );
+      }
 
       if (filtered.length === 0) {
-        historyList.innerHTML = `<div class="history-empty">${onlyFav ? "暂无收藏记录" : "暂无历史记录，上传第一张鱼眼照片开始分析吧！"}</div>`;
+        historyList.innerHTML = `<div class="history-empty">${searchTerm || filterVal !== "all" ? "未找到匹配的记录" : "暂无历史记录，上传第一张鱼眼照片开始分析吧！"}</div>`;
         return;
       }
-      const frag = document.createDocumentFragment();
-      const favSet = new Set(favs);
-      filtered.forEach((r) => {
-        const item = document.createElement("div");
-        item.className = "history-item";
-        item.dataset.id = r.id;
-        const cls = r.freshnessLabel === 0 ? "high" : r.freshnessLabel === 1 ? "mid" : r.freshnessLabel === 2 ? "low" : "mid";
-        const conf = (r.confidenceScore * 100).toFixed(1);
-        const isFav = favSet.has(r.id);
-        item.innerHTML = `
-          <img class="history-thumb" alt="缩略图" src="${r.thumbnail || ""}" loading="lazy" />
-          <div class="history-info">
-            <div class="history-row1">
-              <span class="history-badge ${cls}">${r.freshnessLevel}</span>
-              <span class="history-conf">${conf}%</span>
-            </div>
-            <div class="history-time">${formatHistoryTime(r.timestamp)}</div>
-          </div>
-          <div class="history-actions">
-            <button class="history-btn fav ${isFav ? "is-fav" : ""}" aria-label="收藏" data-act="fav">${isFav ? "★" : "☆"}</button>
-            <button class="history-btn del" aria-label="删除" data-act="del">🗑</button>
-          </div>
-        `;
-        frag.appendChild(item);
-      });
       historyList.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      filtered.forEach(r => {
+        frag.appendChild(createHistoryItemElement(r, favSet.has(r.id)));
+      });
       historyList.appendChild(frag);
     }
 
@@ -4022,7 +2169,20 @@
           loadHistoryToResults(id);
         }
       });
-      favFilter?.addEventListener("change", renderHistory);
+      document.getElementById("historySearch")?.addEventListener("input", renderHistory);
+      document.getElementById("historyFilter")?.addEventListener("change", renderHistory);
+    }
+
+    // Session 10：5 大类建议可折叠
+    function initAdviceExpandable() {
+      document.querySelectorAll(".advice-card-expandable .advice-head").forEach(head => {
+        head.addEventListener("click", () => {
+          const card = head.parentElement;
+          card.classList.toggle("is-expanded");
+          const icon = head.querySelector(".advice-expand-icon");
+          if (icon) icon.textContent = card.classList.contains("is-expanded") ? "▾" : "▸";
+        });
+      });
     }
 
     // ---- 导出 JSON ----
@@ -4060,7 +2220,7 @@
         showToast("暂无可导出的分析结果", "error");
         return;
       }
-      showToast("即将打开打印对话框，可选择“另存为 PDF/图片”", "success", 2500);
+      showToast("即将打开打印对话框，可选择"另存为 PDF/图片"", "success", 2500);
       setTimeout(() => window.print(), 600);
     }
 
@@ -4239,13 +2399,112 @@
       initHistoryEvents();
       renderHistory();
       initOnboarding();
+      initAdviceExpandable();
       exportJsonBtn?.addEventListener("click", exportJson);
       exportImgBtn?.addEventListener("click", exportImage);
       // Session 5
       initHamburgerMenu();
       initKeyboardNav();
       initPWA();
+      // Session 9：置信度警告横幅关闭按钮
+      document.getElementById("warningMidDismiss")?.addEventListener("click", () => {
+        document.getElementById("confidenceWarningMid").hidden = true;
+      });
+      document.getElementById("warningLowDismiss")?.addEventListener("click", () => {
+        document.getElementById("confidenceWarningLow").hidden = true;
+      });
     });
+
+    // ============ Session 7：Service Worker 注册 + 安装提示 ============
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./assets/sw.js')
+          .then((reg) => console.log('📦 PWA: Service Worker 注册成功', reg.scope))
+          .catch((err) => console.warn('📦 PWA: SW 注册失败', err));
+      });
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showInstallPrompt();
+    });
+
+    function showInstallPrompt() {
+      // 已显示过或已安装则跳过
+      if (document.querySelector('.install-banner')) return;
+      if (window.matchMedia('(display-mode: standalone)').matches) return;
+      const banner = document.createElement('div');
+      banner.className = 'install-banner';
+      banner.innerHTML = `
+        <span>📱 安装 Fish-Agent 到桌面，随时检测鱼眼新鲜度</span>
+        <button id="installBtn" class="btn-install">安装</button>
+        <button id="dismissBtn" class="btn-dismiss">稍后</button>
+      `;
+      document.body.appendChild(banner);
+
+      document.getElementById('installBtn').addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          banner.remove();
+        }
+      });
+      document.getElementById('dismissBtn').addEventListener('click', () => banner.remove());
+    }
+
+    window.addEventListener('appinstalled', () => {
+      document.querySelector('.install-banner')?.remove();
+      deferredPrompt = null;
+    });
+
+    // ============ Session 10：全流程冒烟测试（开发调试用） ============
+    function fishAgentSmokeTest() {
+      console.log('🧪 Fish-Agent 冒烟测试开始');
+      const checks = [
+        { name: 'DOM 元素完整性', test: () =>
+          !!document.getElementById('uploadZone') &&
+          !!document.getElementById('analyzeBtn') &&
+          !!document.getElementById('resultsPanel')
+        },
+        { name: 'CSS 已加载', test: () => {
+          const s = getComputedStyle(document.body);
+          return s.backgroundColor !== 'rgba(0, 0, 0, 0)' || s.color !== '';
+        }},
+        { name: 'Service Worker 已注册', test: () =>
+          navigator.serviceWorker?.controller !== null || navigator.serviceWorker?.registration !== undefined
+        },
+        { name: 'localStorage 可用', test: () => {
+          try { localStorage.setItem('test', '1'); localStorage.removeItem('test'); return true; }
+          catch { return false; }
+        }},
+        { name: '置信度自适应函数存在', test: () =>
+          typeof handleConfidenceAdaptive === 'function'
+        },
+        { name: '离线模拟函数存在', test: () =>
+          typeof simulateAnalysis === 'function'
+        },
+        { name: '5 大类建议 DOM 存在', test: () =>
+          !!document.getElementById('adviceStorage') &&
+          !!document.getElementById('adviceHandling') &&
+          !!document.getElementById('adviceBest')
+        },
+        { name: '历史搜索过滤 DOM 存在', test: () =>
+          !!document.getElementById('historySearch') &&
+          !!document.getElementById('historyFilter')
+        },
+      ];
+      let passed = 0;
+      checks.forEach(c => {
+        const ok = c.test();
+        console.log(`${ok ? '✅' : '❌'} ${c.name}`);
+        if (ok) passed++;
+      });
+      console.log(`🧪 冒烟测试完成：${passed}/${checks.length} 通过`);
+      return passed === checks.length;
+    }
   </script>
 </body>
 </html>

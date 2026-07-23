@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+<meta name="theme-color" content="#04162b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Fish-Agent" />
+<meta name="description" content="Fish-Agent 技术细节 — FishFreshNetV1 模型架构、LangGraph 16 节点工作流、MFED 数据集、Grad-CAM 可解释性、创作历程与社会价值。" />
+<meta name="robots" content="index, follow" />
+<title>Fish-Agent · 技术细节与创作历程</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" media="print" onload="this.media='all'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" /></noscript>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="manifest" href="./assets/manifest.json">
+</head>
+<body>
+  <a href="#architecture" class="skip-link">跳到主内容</a>
+
+  <!-- ============ 深海动态背景层 ============ -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+    <div class="bubbles" id="bubbles"></div>
+    <div class="wave wave-1"></div>
+    <div class="wave wave-2"></div>
+  </div>
+
+  <!-- ============ 导航栏 ============ -->
+  <header class="navbar" role="banner">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">FA</div>
+      <div class="brand-text">
+        <span class="brand-title">Fish-Agent</span>
+        <span class="brand-sub">水产品新鲜度智能评估</span>
+      </div>
+    </div>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="#architecture">关于</a>
+      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener">开源</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navOverlay">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </header>
+
+  <!-- 移动端全屏导航遮罩 -->
+  <div class="nav-overlay" id="navOverlay" hidden>
+    <nav class="nav-overlay-links" aria-label="移动端导航">
+      <a href="index.html" data-close>首页</a>
+      <a href="#architecture" data-close>关于</a>
+      <a href="https://github.com/yance77777/Fish-Agent" target="_blank" rel="noopener" data-close>开源</a>
+    </nav>
+  </div>
+
+  <main id="architecture">
+
+    <!-- ============ 技术架构图（占位） ============ -->
+    <section class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">技术架构</h2>
+      </div>
+      <div id="archContent" class="arch-diagram">
+        <!-- 第一层：用户浏览器 -->
+        <div class="arch-layer">
+          <div class="arch-layer-title">用户浏览器（GitHub Pages 托管）</div>
+          <div class="arch-boxes">
+            <div class="arch-box">
+              <span class="arch-box-icon" aria-hidden="true">🏠</span>
+              <span>index.html<br/><small>检测主页</small></span>
+            </div>
+            <div class="arch-box">
+              <span class="arch-box-icon" aria-hidden="true">📖</span>
+              <span>about.html<br/><small>技术细节页</small></span>
+            </div>
+            <div class="arch-box">
+              <span class="arch-box-icon" aria-hidden="true">🎨</span>
+              <span>style.css<br/><small>共享样式</small></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 连接箭头 -->
+        <div class="arch-arrow">↓ HTTPS POST /predict</div>
+
+        <!-- 第二层：HF Spaces 后端 -->
+        <div class="arch-layer arch-layer-backend">
+          <div class="arch-layer-title">HF Spaces 后端（FastAPI + PyTorch）</div>
+          <div class="arch-boxes">
+            <div class="arch-box arch-box-wide">
+              <span>FishFreshNetV1 推理 → 三类概率分布 + Grad-CAM</span>
+            </div>
+          </div>
+          <div class="arch-branches">
+            <div class="arch-branch arch-branch-high">置信度 ≥ 80% → 高置信度直出</div>
+            <div class="arch-branch arch-branch-mid">50–80% → 多区域融合</div>
+            <div class="arch-branch arch-branch-low">＜50% → 备用模型复核</div>
+          </div>
+        </div>
+
+        <!-- 连接箭头 -->
+        <div class="arch-arrow arch-arrow-fail">↓ 失败 / 超时 / 不可达</div>
+
+        <!-- 第三层：离线兜底 -->
+        <div class="arch-layer arch-layer-fail">
+          <div class="arch-layer-title">离线演示模式（前端本地兜底）</div>
+          <div class="arch-boxes">
+            <div class="arch-box arch-box-wide">
+              <span>simulateAnalysis() + [模拟] 标签 + 顶部横幅</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 痛点 vs 解法 ============ -->
+    <section id="pain-points" class="reveal">
+      <h2 class="intro-heading">痛点 vs 解法</h2>
+      <div class="compare-pain">
+        <div class="pain-card pain">
+          <div class="pain-card-head">
+            <span class="pain-icon" aria-hidden="true">!</span>
+            <span>当前痛点</span>
+          </div>
+          <ul class="pain-list">
+            <li>肉眼经验依赖个人技术，新手难掌握</li>
+            <li>化学检测成本高、周期长，且<strong>破坏样品</strong></li>
+            <li>现有工具只给结论，不告诉"为什么"和"怎么办"</li>
+          </ul>
+        </div>
+        <div class="pain-card solution">
+          <div class="pain-card-head">
+            <span class="pain-icon" aria-hidden="true">✓</span>
+            <span>Fish-Agent 解法</span>
+          </div>
+          <ul class="pain-list">
+            <li>鱼眼照片入口，<strong>低成本非破坏式</strong></li>
+            <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong></li>
+            <li>Grad-CAM 热力图解释"为什么"，结构化报告给出"怎么办"</li>
+            <li>置信度驱动自适应分支，低置信度主动提示重拍</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 三类用户 ============ -->
+    <section id="users" class="reveal">
+      <h2 class="intro-heading">面向三类用户</h2>
+      <div class="users-grid">
+        <div class="user-card">
+          <div class="user-icon" aria-hidden="true">🛒</div>
+          <h4 class="user-title">消费者</h4>
+          <p class="user-text">菜市场 / 超市买鱼时拍照即知新鲜度，告别"凭手感挑鱼"的盲选。</p>
+        </div>
+        <div class="user-card">
+          <div class="user-icon" aria-hidden="true">🐟</div>
+          <h4 class="user-title">商贩与采购</h4>
+          <p class="user-text">批量进货验收，一键导出 CSV 汇总，留档对账，降低退货纠纷。</p>
+        </div>
+        <div class="user-card">
+          <div class="user-icon" aria-hidden="true">📋</div>
+          <h4 class="user-title">质检监管</h4>
+          <p class="user-text">生成 PDF 报告存档，含结论、置信度、建议与时间戳，全程可追溯。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 方案对比表（占位） ============ -->
+    <section id="comparison" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">方案对比</h2>
+      </div>
+      <div id="compareContent">
+        <h3 class="intro-heading">FishFreshNetV1 vs 主流模型</h3>
+        <p class="intro-sub">在 MFED（自建数据集）和 FFE（公开数据集）上的全面对比</p>
+
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>模型</th>
+                <th>参数/M</th>
+                <th>FLOPs/G</th>
+                <th>MFED 准确率</th>
+                <th>FFE 准确率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>VGG16</td>
+                <td>134.27</td>
+                <td>15.47</td>
+                <td>98.08%</td>
+                <td>77.40%</td>
+              </tr>
+              <tr>
+                <td>ResNet18</td>
+                <td>11.18</td>
+                <td>1.82</td>
+                <td>98.67%</td>
+                <td>79.36%</td>
+              </tr>
+              <tr>
+                <td>MobileNetV2</td>
+                <td>2.23</td>
+                <td>0.33</td>
+                <td>98.54%</td>
+                <td>79.59%</td>
+              </tr>
+              <tr>
+                <td>EfficientNet-B0</td>
+                <td>4.01</td>
+                <td>0.41</td>
+                <td>98.96%</td>
+                <td>81.64%</td>
+              </tr>
+              <tr class="compare-table-highlight">
+                <td class="highlight">FishFreshNetV1（本作品）</td>
+                <td class="highlight">4.22</td>
+                <td class="highlight">0.41</td>
+                <td class="highlight">99.23%</td>
+                <td class="highlight">81.78%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="intro-sub" style="margin-top:16px;">
+          仅用 VGG16 的 3.1% 参数量，实现 1.15% 的准确率提升。
+          数据集已开源：<a href="https://data.mendeley.com/datasets/67nmx3mhwh/2" target="_blank" rel="noopener">Mendeley Data</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 工作流（占位） ============ -->
+    <section id="workflow" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">LangGraph 16 节点工作流</h2>
+      </div>
+      <div id="workflowContent">
+        <h3 class="intro-heading">LangGraph 16 节点智能体工作流</h3>
+        <p class="intro-sub">14 个逻辑步骤 · 16 个实际节点 · 置信度驱动的自适应分支</p>
+
+        <!-- 拓扑图 -->
+        <div class="workflow-topology">
+          <!-- 步骤 1-2 -->
+          <div class="topo-node topo-task" data-tip="接收图像并记录上传时间">
+            <span class="topo-num">①</span>
+            <span class="topo-name">图片上传</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="判断是否鱼类、是否含鱼眼、质量是否合格">
+            <span class="topo-num">②</span>
+            <span class="topo-name">增强版质量检测</span>
+          </div>
+
+          <!-- 质量分支 -->
+          <div class="topo-branch">
+            <div class="topo-branch-line topo-branch-fail"></div>
+            <div class="topo-node topo-task topo-end" data-tip="输出不合格原因和重拍建议">
+              <span class="topo-num">③</span>
+              <span class="topo-name">质量不合格 → END</span>
+            </div>
+          </div>
+
+          <!-- 步骤 4-6 -->
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-task" data-tip="按场景和质量等级做轻量预处理">
+            <span class="topo-num">④</span>
+            <span class="topo-name">图像预处理</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="识别鱼眼、鳃部、体表区域">
+            <span class="topo-num">⑤</span>
+            <span class="topo-name">鱼体区域识别</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="优先 FishFreshNetV1，失败回退多模态大模型">
+            <span class="topo-num">⑥</span>
+            <span class="topo-name">新鲜度分类</span>
+          </div>
+
+          <!-- 置信度三分支 -->
+          <div class="topo-confidence-branches">
+            <div class="topo-branch-path topo-path-high">
+              <div class="topo-branch-label">≥ 80% 高置信度</div>
+              <div class="topo-node topo-direct">直接进入 ⑧</div>
+            </div>
+            <div class="topo-branch-path topo-path-mid">
+              <div class="topo-branch-label">50–80% 中置信度</div>
+              <div class="topo-node topo-agent" data-tip="融合鱼眼/鳃部/体表多区域分析">
+                <span class="topo-num">⑦b</span>
+                <span class="topo-name">多区域融合</span>
+              </div>
+            </div>
+            <div class="topo-branch-path topo-path-low">
+              <div class="topo-branch-label">＜50% 低置信度</div>
+              <div class="topo-node topo-agent" data-tip="大模型复核仲裁">
+                <span class="topo-num">⑦c</span>
+                <span class="topo-name">备用模型复核</span>
+              </div>
+              <div class="topo-sub-branch">
+                <div class="topo-sub-path">复核回升 ≥50% → 继续 ⑧</div>
+                <div class="topo-sub-path topo-sub-fail">
+                  复核仍低 → ⑦d 提示重拍 → END
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 步骤 8-14 统一路径 -->
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="调真实 Grad-CAM 服务，失败生成降级解释">
+            <span class="topo-num">⑧</span>
+            <span class="topo-name">Grad-CAM 可视化</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="鱼眼外观/清澈度/颜色/纹理/质量指标">
+            <span class="topo-num">⑨</span>
+            <span class="topo-name">结构化分析</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="新鲜度趋势与剩余保质时间预测">
+            <span class="topo-num">⑩</span>
+            <span class="topo-name">时序分析</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="结构化报告与知识图谱匹配">
+            <span class="topo-num">⑪</span>
+            <span class="topo-name">报告生成</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-agent" data-tip="储存/食用/处理/安全/最佳实践 5 大类建议">
+            <span class="topo-num">⑫</span>
+            <span class="topo-name">建议生成</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-task" data-tip="汇总最终展示数据">
+            <span class="topo-num">⑬</span>
+            <span class="topo-name">结果可视化</span>
+          </div>
+          <div class="topo-connector"></div>
+          <div class="topo-node topo-task topo-end" data-tip="生成记录 ID，预留样本池入口">
+            <span class="topo-num">⑭</span>
+            <span class="topo-name">反馈闭环 → END</span>
+          </div>
+        </div>
+
+        <!-- 节点职责表 -->
+        <h3 class="intro-heading" style="margin-top:32px;">16 节点职责明细</h3>
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr><th>#</th><th>节点</th><th>类型</th><th>职责</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>image_upload</td><td>task</td><td>接收图像并记录上传时间</td></tr>
+              <tr><td>2</td><td>enhanced_quality_check</td><td>agent</td><td>判断是否鱼类、是否含鱼眼、质量是否合格</td></tr>
+              <tr><td>3</td><td>quality_unqualified</td><td>task</td><td>输出不合格原因和重拍建议</td></tr>
+              <tr><td>4</td><td>image_preprocess</td><td>task</td><td>按场景和质量等级做轻量预处理</td></tr>
+              <tr><td>5</td><td>fish_region_detection</td><td>agent</td><td>识别鱼眼、鳃部、体表区域</td></tr>
+              <tr><td>6</td><td>freshness_classification</td><td>agent</td><td>优先 FishFreshNetV1，失败回退多模态大模型</td></tr>
+              <tr><td>7</td><td>multi_region_fusion</td><td>agent</td><td>中置信度路径，融合鱼眼/鳃部/体表</td></tr>
+              <tr><td>8</td><td>backup_model_review</td><td>agent</td><td>低置信度路径，大模型复核仲裁</td></tr>
+              <tr><td>9</td><td>low_confidence_prompt</td><td>task</td><td>二次低置信度提示重拍或人工确认</td></tr>
+              <tr><td>10</td><td>enhanced_gradcam</td><td>agent</td><td>调真实 Grad-CAM，失败生成降级解释</td></tr>
+              <tr><td>11</td><td>structured_analysis</td><td>agent</td><td>鱼眼外观/清澈度/颜色/纹理/质量指标</td></tr>
+              <tr><td>12</td><td>temporal_analysis</td><td>agent</td><td>新鲜度趋势与剩余保质时间预测</td></tr>
+              <tr><td>13</td><td>report_generation</td><td>agent</td><td>结构化报告与知识图谱匹配</td></tr>
+              <tr><td>14</td><td>recommendation_generation</td><td>agent</td><td>储存/食用/处理/安全/最佳实践建议</td></tr>
+              <tr><td>15</td><td>result_visualization</td><td>task</td><td>汇总最终展示数据</td></tr>
+              <tr><td>16</td><td>feedback_loop</td><td>task</td><td>生成记录 ID，预留样本池入口</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 图例 -->
+        <div class="topo-legend">
+          <span class="topo-legend-item"><span class="topo-legend-dot topo-agent-dot"></span> agent 节点（调用大模型）</span>
+          <span class="topo-legend-item"><span class="topo-legend-dot topo-task-dot"></span> task 节点（纯数据处理）</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 创作历程（占位） ============ -->
+    <section id="journey" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">创作历程</h2>
+      </div>
+      <div id="journeyContent">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot dot-gold" aria-hidden="true">💡</div>
+            <div class="timeline-content">
+              <h4>灵感诞生</h4>
+              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是新鲜度最强的视觉信号</strong>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot dot-aqua" aria-hidden="true">🔬</div>
+            <div class="timeline-content">
+              <h4>独立研究</h4>
+              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot dot-blue" aria-hidden="true">⚙️</div>
+            <div class="timeline-content">
+              <h4>后端开发</h4>
+              <p>FastAPI + PyTorch 模型推理服务，部署至 Hugging Face Spaces。<strong>LangGraph 16 节点智能体工作流</strong>，置信度自适应分支 + 多模态 LLM 兜底，确保每一次检测都有可靠结果。</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot dot-purple" aria-hidden="true">🎨</div>
+            <div class="timeline-content">
+              <h4>前端开发（初赛）</h4>
+              <p>TRAE Work 5 次对话从零到交付。项目奠基 → 视觉升级 → API 集成 → 结果深化 → 打磨交付。单文件 HTML <strong>149KB</strong>，深海动态主题 + 4-Tab 分析报告 + 离线演示模式。</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot dot-green" aria-hidden="true">🚀</div>
+            <div class="timeline-content">
+              <h4>复赛迭代</h4>
+              <p>多页面重构 → 移动端深度适配 + PWA → 16 节点工作流融合 → <strong>置信度自适应前端机制</strong> → 最终交付打磨。从"能用的 Demo"进化为"好用的产品"。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--
+    演示视频脚本（1-5 分钟录屏参考）：
+    1. 打开 https://yance77777.github.io/Fish-Agent-Demo/（0:00-0:10）
+    2. 点击上传区，选择一张高度新鲜鱼眼照片（0:10-0:20）
+    3. 点击"开始分析"，展示扫描动画（0:20-0:30）
+    4. 分析完成，展示 4-Tab 报告：概览 → AI视觉分析 → 详细报告 → 处理建议（0:30-1:15）
+    5. Grad-CAM 滑块对比原图与热力图（1:15-1:30）
+    6. 展示 5 大类建议卡片折叠展开（1:30-1:45）
+    7. 上传一张低质量照片，触发置信度 < 60% 红色弹窗（1:45-2:00）
+    8. 浏览历史记录，演示搜索过滤（2:00-2:10）
+    9. 点击导航"关于"跳转到 about.html（2:10-2:15）
+    10. 浏览技术架构图 → 性能对比表 → 16 节点工作流拓扑图 → 创作历程 → 社会价值（2:15-3:00）
+    11. 回到首页，展示移动端（开发者工具移动模拟或手机）（3:00-3:30）
+    12. 演示离线模式（DevTools → Network → Offline）（3:30-4:00）
+    -->
+
+    <!-- ============ 社会价值（占位） ============ -->
+    <section id="social-value" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">社会价值</h2>
+      </div>
+      <div id="socialContent">
+        <div class="social-grid">
+          <div class="social-card">
+            <div class="social-icon" aria-hidden="true">👥</div>
+            <h4>受众规模</h4>
+            <p>全国水产品年产量 <strong>7116 万吨</strong>，产业链覆盖千万级从业者与 <strong>3 亿+</strong> 消费者，社会需求面极广。</p>
+          </div>
+          <div class="social-card">
+            <div class="social-icon" aria-hidden="true">🛡️</div>
+            <h4>填平经验壁垒</h4>
+            <p>让第一次买鱼的高中生也能拥有<strong>老师傅级别的判别力</strong>，用技术填平"经验鸿沟"。</p>
+          </div>
+          <div class="social-card">
+            <div class="social-icon" aria-hidden="true">🏥</div>
+            <h4>降低食安事故</h4>
+            <p>低成本视觉检测在<strong>"最后一公里"拦截问题产品</strong>，事前识别胜过事后追溯。</p>
+          </div>
+          <div class="social-card">
+            <div class="social-icon" aria-hidden="true">🏝️</div>
+            <h4>助力边远地区</h4>
+            <p>一部手机 + 浏览器即可获得<strong>一线城市疾控中心级别</strong>的初步判别能力。</p>
+          </div>
+          <div class="social-card">
+            <div class="social-icon" aria-hidden="true">⚖️</div>
+            <h4>促进市场公平</h4>
+            <p>消费者拥有独立判别能力，从机制上<strong>减少"以次充好"的生存空间</strong>。</p>
+          </div>
+          <div class="social-card">
+            <div class="social-icon" aria-hidden="true">🔄</div>
+            <h4>可复制性</h4>
+            <p>技术栈轻量（CPU 推理），部署标准化（一小时自建），<strong>场景可迁移</strong>（肉类/果蔬/海鲜）。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 迭代规划（占位） ============ -->
+    <section id="iteration" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">迭代规划</h2>
+      </div>
+      <div id="iterContent">
+        <div class="iter-grid">
+          <div class="iter-phase">
+            <h4>短期（1–3 个月）</h4>
+            <ul>
+              <li><strong>MC Dropout 推理置信度量化</strong>（论文未来工作）</li>
+              <li>受控混淆因子训练（防背景反光干扰）</li>
+              <li>数据集扩充到 <strong>1 万+</strong> 张</li>
+              <li>批量分析功能上线</li>
+            </ul>
+          </div>
+          <div class="iter-phase">
+            <h4>中期（3–12 个月）</h4>
+            <ul>
+              <li><strong>品种细分</strong>（鱼种识别 + 新鲜度 + 烹饪建议三合一）</li>
+              <li>监管对接（农贸市场 SaaS 版）</li>
+              <li><strong>离线 SDK</strong>（ONNX 打包，本地推理）</li>
+              <li>微信小程序上线</li>
+            </ul>
+          </div>
+          <div class="iter-phase">
+            <h4>长期（1 年以上）</h4>
+            <ul>
+              <li><strong>实时场景验证</strong>（论文局限性突破）</li>
+              <li>B 端 SaaS 平台</li>
+              <li>G 端监管平台（<strong>明厨亮灶</strong>接入）</li>
+              <li>多模态融合（图像 + 气味 + 质地 + 温度）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ 页脚 ============ -->
+  <footer class="competition-footer">
+    <div class="competition-info">
+      <span class="badge">🏆 TRAE AI 创造力大赛</span>
+      <span class="badge">🏷 社会服务赛道</span>
+      <span class="badge">👤 参赛者：祈雨柒</span>
+    </div>
+    <div class="tech-stack">
+      <span>🐍 Python + FastAPI</span>
+      <span>🧠 PyTorch + EfficientNet-B0</span>
+      <span>🔗 LangGraph 工作流</span>
+      <span>🎨 纯 HTML/CSS/JS 前端</span>
+    </div>
+    <div class="footer-copy">Fish-Agent © 2026</div>
+  </footer>
+
+  <script>
+    // 气泡生成
+    function initBubbles() {
+      const bubblesEl = document.getElementById("bubbles");
+      if (!bubblesEl) return;
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+      const isMobile = window.matchMedia?.("(max-width: 640px)").matches;
+      const COUNT = isMobile ? 10 : 18;
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < COUNT; i++) {
+        const b = document.createElement("span");
+        b.className = "bubble";
+        const size = 8 + Math.random() * 32;
+        const left = Math.random() * 100;
+        const duration = 8 + Math.random() * 10;
+        const delay = -Math.random() * duration;
+        const sway = (Math.random() * 60 - 30);
+        b.style.cssText = `width:${size}px;height:${size}px;left:${left}%;animation-duration:${duration}s;animation-delay:${delay}s;`;
+        b.style.setProperty("--sway", `${sway}px`);
+        frag.appendChild(b);
+      }
+      bubblesEl.appendChild(frag);
+    }
+
+    // 导航菜单
+    function initHamburgerMenu() {
+      const toggle = document.getElementById("navToggle");
+      const overlay = document.getElementById("navOverlay");
+      if (!toggle || !overlay) return;
+      const openMenu = () => {
+        overlay.hidden = false;
+        toggle.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        document.body.style.overflow = "hidden";
+      };
+      const closeMenu = () => {
+        overlay.hidden = true;
+        toggle.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
+      };
+      toggle.addEventListener("click", () => overlay.hidden ? openMenu() : closeMenu());
+      overlay.querySelectorAll("[data-close]").forEach(a => a.addEventListener("click", closeMenu));
+      document.addEventListener("keydown", e => { if (e.key === "Escape" && !overlay.hidden) closeMenu(); });
+    }
+
+    // 入场动画
+    function initReveal() {
+      const els = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window)) {
+        els.forEach(el => el.classList.add("revealed"));
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+      els.forEach(el => io.observe(el));
+    }
+
+    // 初始化
+    document.addEventListener("DOMContentLoaded", () => {
+      initBubbles();
+      initHamburgerMenu();
+      initReveal();
+    });
+
+    // ============ Session 7：Service Worker 注册 ============
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./assets/sw.js')
+          .then((reg) => console.log('📦 PWA: Service Worker 注册成功', reg.scope))
+          .catch((err) => console.warn('📦 PWA: SW 注册失败', err));
+      });
+    }
+  </script>
+</body>
+</html>
