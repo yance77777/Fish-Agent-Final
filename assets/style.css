@@ -439,19 +439,32 @@ section { margin-bottom: var(--space-7); }
 /* ============ 内置示例图片选择 ============ */
 .sample-card {
   margin-top: var(--space-4);
-  padding: var(--space-5);
+  padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-xl);
   background: var(--card);
   border: 1px solid var(--border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  max-height: 200px;
+  opacity: 1;
+  transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.4s ease, padding 0.4s ease, border-width 0.4s ease;
+}
+.sample-card.is-hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  pointer-events: none;
 }
 .sample-card-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 .sample-card-title {
   font-size: 15px;
@@ -463,61 +476,64 @@ section { margin-bottom: var(--space-7); }
   color: var(--muted, #8aa4b8);
 }
 .sample-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.sample-item {
-  position: relative;
-  border: 2px solid var(--border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--radius-md);
-  overflow: hidden;
+.sample-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border, rgba(255, 255, 255, 0.1));
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--foam, #eaf6fb);
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  background: var(--card);
-  padding: 0;
-  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
-  aspect-ratio: 1;
+  transition: border-color 0.25s, background 0.25s, transform 0.15s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
-.sample-item:hover {
+.sample-tag:hover {
   border-color: var(--aqua, #27d0c4);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(39, 208, 196, 0.25);
+  background: rgba(39, 208, 196, 0.08);
+  transform: translateY(-1px);
 }
-.sample-item:focus-visible {
+.sample-tag:active {
+  transform: scale(0.97);
+}
+.sample-tag:focus-visible {
   outline: 2px solid var(--aqua, #27d0c4);
   outline-offset: 2px;
 }
-.sample-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+.sample-tag:disabled {
+  opacity: 0.5;
+  cursor: wait;
+  pointer-events: none;
 }
-.sample-label {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  display: block;
-  text-align: center;
-  padding: 6px 4px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--white, #fff);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.sample-tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-.sample-label-high { background: rgba(39, 208, 196, 0.85); }
-.sample-label-mid { background: rgba(245, 181, 74, 0.85); }
-.sample-label-low { background: rgba(239, 84, 84, 0.85); }
+.sample-tag-high .sample-tag-dot { background: var(--aqua, #27d0c4); }
+.sample-tag-mid  .sample-tag-dot { background: var(--amber, #f5b54a); }
+.sample-tag-low  .sample-tag-dot { background: var(--coral, #ef5454); }
+.sample-tag-high:hover { border-color: var(--aqua, #27d0c4); }
+.sample-tag-mid:hover  { border-color: var(--amber, #f5b54a); }
+.sample-tag-low:hover  { border-color: var(--coral, #ef5454); }
 
 @media (max-width: 640px) {
-  .sample-card { padding: var(--space-4); }
+  .sample-card { padding: var(--space-3) var(--space-4); }
   .sample-card-head { flex-direction: column; gap: 2px; }
   .sample-grid { gap: 8px; }
-  .sample-label { font-size: 11px; padding: 4px 2px; }
+  .sample-tag { padding: 7px 14px; font-size: 13px; }
 }
 @media (max-width: 374px) {
-  .sample-grid { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  .sample-label { font-size: 10px; }
+  .sample-tag { padding: 6px 12px; font-size: 12px; }
 }
 
 /* ============ 预览区 ============ */

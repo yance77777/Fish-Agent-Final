@@ -280,20 +280,17 @@
       <div class="sample-card" id="sampleCard">
         <div class="sample-card-head">
           <span class="sample-card-title">是否载入内置鱼眼照片</span>
-          <span class="sample-card-hint">没有鱼眼照片？试试这三张示例</span>
+          <span class="sample-card-hint">没有鱼眼照片？点击标签试试</span>
         </div>
         <div class="sample-grid">
-          <button class="sample-item" data-sample="highly-fresh" type="button">
-            <img src="assets/samples/highly-fresh.png" alt="高度新鲜鱼眼示例" loading="lazy" />
-            <span class="sample-label sample-label-high">高度新鲜</span>
+          <button class="sample-tag sample-tag-high" data-sample="highly-fresh" type="button">
+            <span class="sample-tag-dot"></span>高度新鲜
           </button>
-          <button class="sample-item" data-sample="fresh" type="button">
-            <img src="assets/samples/fresh.png" alt="新鲜鱼眼示例" loading="lazy" />
-            <span class="sample-label sample-label-mid">新鲜</span>
+          <button class="sample-tag sample-tag-mid" data-sample="fresh" type="button">
+            <span class="sample-tag-dot"></span>新鲜
           </button>
-          <button class="sample-item" data-sample="not-fresh" type="button">
-            <img src="assets/samples/not-fresh.png" alt="不新鲜鱼眼示例" loading="lazy" />
-            <span class="sample-label sample-label-low">不新鲜</span>
+          <button class="sample-tag sample-tag-low" data-sample="not-fresh" type="button">
+            <span class="sample-tag-dot"></span>不新鲜
           </button>
         </div>
       </div>
@@ -932,6 +929,9 @@
       previewLoading.hidden = true;
       previewCard.classList.remove("is-active");
       uploadZone.style.display = "flex";
+      // 恢复内置示例卡片显示
+      const sc = document.getElementById("sampleCard");
+      if (sc) sc.classList.remove("is-hidden");
       fileInput.value = "";
       uploadText.textContent = "点击或拖拽上传鱼眼照片";
       uploadText.classList.remove("upload-text-drag");
@@ -974,21 +974,32 @@
     });
 
     // —— 内置示例图片选择 ——
-    document.querySelectorAll(".sample-item").forEach((btn) => {
+    const sampleCard = document.getElementById("sampleCard");
+    let sampleLoading = false;
+    document.querySelectorAll(".sample-tag").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        const img = btn.querySelector("img");
-        if (!img) return;
+        if (sampleLoading) return; // 防止快速连续点击
+        sampleLoading = true;
+        document.querySelectorAll(".sample-tag").forEach(b => b.disabled = true);
+        const sampleName = btn.dataset.sample;
+        const imgUrl = `assets/samples/${sampleName}.png`;
         try {
-          const resp = await fetch(img.src);
+          const resp = await fetch(imgUrl);
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
           const blob = await resp.blob();
-          const fileName = btn.dataset.sample + ".png";
-          const file = new File([blob], fileName, { type: "image/png" });
+          if (blob.size === 0) throw new Error("空文件");
+          const file = new File([blob], sampleName + ".png", { type: "image/png" });
           const dt = new DataTransfer();
           dt.items.add(file);
           fileInput.files = dt.files;
           fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+          // 成功载入后隐藏示例卡片
+          sampleCard.classList.add("is-hidden");
         } catch (err) {
           showToast("示例图片加载失败，请重试", "error");
+        } finally {
+          sampleLoading = false;
+          document.querySelectorAll(".sample-tag").forEach(b => b.disabled = false);
         }
       });
     });
