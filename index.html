@@ -1150,13 +1150,15 @@
       // 尊重"减少动画"系统偏好 → 不生成气泡
       if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
       const isMobile = window.matchMedia?.("(max-width: 640px)").matches;
-      const COUNT = isMobile ? 10 : 18;  // 移动端 8-12 个，桌面 15-25 个
+      const COUNT = isMobile ? 6 : 12;  // 移动端 6 个，桌面 12 个
       const frag = document.createDocumentFragment();
+      const segment = 100 / COUNT;  // 等分区间宽度，确保均匀分布
       for (let i = 0; i < COUNT; i++) {
         const b = document.createElement("span");
         b.className = "bubble";
         const size = 8 + Math.random() * 32;       // 8-40px
-        const left = Math.random() * 100;            // 0-100%
+        // 在第 i 个等分区间内随机，确保左右均匀覆盖
+        const left = i * segment + Math.random() * segment;
         const duration = 8 + Math.random() * 10;    // 8-18s
         const delay = -Math.random() * duration;    // 负延迟 → 立即分散在时间轴上
         const sway = (Math.random() * 60 - 30);     // ±30px

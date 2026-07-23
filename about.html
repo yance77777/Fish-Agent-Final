@@ -74,7 +74,7 @@
   <main id="architecture">
 
     <!-- ============ 技术架构图（占位） ============ -->
-    <section class="reveal">
+    <section class="reveal" style="margin-bottom: var(--space-8);">
       <div class="section-head">
         <h2 class="section-title">技术架构</h2>
       </div>
@@ -116,18 +116,6 @@
           </div>
         </div>
 
-        <!-- 连接箭头 -->
-        <div class="arch-arrow arch-arrow-fail">↓ 失败 / 超时 / 不可达</div>
-
-        <!-- 第三层：离线体验模式 -->
-        <div class="arch-layer arch-layer-fail">
-          <div class="arch-layer-title">离线体验模式（网络不可用时自动启用）</div>
-          <div class="arch-boxes">
-            <div class="arch-box arch-box-wide">
-              <span>展示示例分析结果，附 [模拟] 标签与顶部橙色提示横幅</span>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -194,7 +182,7 @@
       </div>
       <div id="compareContent">
         <h3 class="section-subtitle">FishFreshNetV1 vs 主流模型</h3>
-        <p class="intro-sub">在 MFED（自建数据集）与 FFE（公开数据集<sup>[11]</sup>）上的全面性能对比</p>
+        <p class="intro-sub">在 MFED（自建数据集）与 FFE（公开数据集<sup>[1]</sup>，Yildiz 等<sup>[2]</sup>同期研究亦使用该数据集）上的全面性能对比</p>
 
         <div class="table-wrap">
           <table class="compare-table">
@@ -209,21 +197,21 @@
             </thead>
             <tbody>
               <tr>
-                <td>VGG16<sup>[4]</sup></td>
+                <td>VGG16<sup>[3]</sup></td>
                 <td>134.27</td>
                 <td>15.47</td>
                 <td>98.08%</td>
                 <td>77.40%</td>
               </tr>
               <tr>
-                <td>ResNet18<sup>[5]</sup></td>
+                <td>ResNet18<sup>[4]</sup></td>
                 <td>11.18</td>
                 <td>1.82</td>
                 <td>98.67%</td>
                 <td>79.36%</td>
               </tr>
               <tr>
-                <td>MobileNetV2<sup>[6]</sup></td>
+                <td>MobileNetV2<sup>[5]</sup></td>
                 <td>2.23</td>
                 <td>0.33</td>
                 <td>98.54%</td>
@@ -296,7 +284,7 @@
           <p>鱼眼新鲜度评估是一个细粒度视觉分类任务，需要高精度且计算高效的神经网络来适配移动端部署。FishFreshNetV1 选用 <strong>EfficientNet-B0</strong> 作为基础架构，核心优势如下：</p>
           <ul class="model-feature-list">
             <li>
-              <strong>复合缩放方法（Compound Scaling）<sup>[1]</sup></strong>：EfficientNet 通过统一的复合系数 φ 同时缩放网络深度（depth）、宽度（width）和输入分辨率（resolution），三者协同优化而非单一维度扩展，在保持高精度的同时显著减少参数量。
+              <strong>复合缩放方法（Compound Scaling）<sup>[6]</sup></strong>：EfficientNet 通过统一的复合系数 φ 同时缩放网络深度（depth）、宽度（width）和输入分辨率（resolution），三者协同优化而非单一维度扩展，在保持高精度的同时显著减少参数量。
             </li>
             <li>
               <strong>MBConv 模块（Mobile Inverted Bottleneck Convolution）</strong>：作为 EfficientNet-B0 的基本构建单元，MBConv 采用深度可分离卷积 + 反残差结构（先升维→深度卷积→降维），在大幅降低计算量的同时保持高特征提取能力。
@@ -310,7 +298,7 @@
         <!-- CBAM -->
         <div class="model-section">
           <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🎯</span> CBAM 注意力机制</h3>
-          <p>在实际检测场景中，鱼眼图像常包含大量无关信息（泡沫箱、光照变化、鱼鳞等）。为使网络聚焦于关键鱼眼区域，FishFreshNetV1 在 EfficientNet-B0 最后一个特征提取层之后（输入通道数 1280）集成了 <strong>CBAM（Convolutional Block Attention Module）<sup>[2]</sup></strong>。CBAM 是一个轻量级注意力模块，沿<strong>通道</strong>和<strong>空间</strong>两个维度依次推送注意力图：</p>
+          <p>在实际检测场景中，鱼眼图像常包含大量无关信息（泡沫箱、光照变化、鱼鳞等）。为使网络聚焦于关键鱼眼区域，FishFreshNetV1 在 EfficientNet-B0 最后一个特征提取层之后（输入通道数 1280）集成了 <strong>CBAM（Convolutional Block Attention Module）<sup>[7]</sup></strong>。CBAM 是一个轻量级注意力模块，沿<strong>通道</strong>和<strong>空间</strong>两个维度依次推送注意力图：</p>
 
           <div class="cbam-flow">
             <div class="cbam-block">
@@ -341,7 +329,7 @@
         <!-- Grad-CAM -->
         <div class="model-section">
           <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🔥</span> Grad-CAM 可解释性</h3>
-          <p>为克服深度神经网络的"黑箱"问题，FishFreshNetV1 引入 <strong>Grad-CAM（Gradient-weighted Class Activation Mapping）<sup>[3]</sup></strong> 可视化技术：</p>
+          <p>为克服深度神经网络的"黑箱"问题，FishFreshNetV1 引入 <strong>Grad-CAM（Gradient-weighted Class Activation Mapping）<sup>[8]</sup></strong> 可视化技术：</p>
           <ul class="model-feature-list">
             <li>利用目标类别梯度流入 EfficientNet-B0 最后一个卷积层，生成粗粒度定位图</li>
             <li>对梯度执行全局平均池化，计算每个特征通道的重要性权重</li>
@@ -533,14 +521,14 @@
             <div class="timeline-dot dot-gold" aria-hidden="true">💡</div>
             <div class="timeline-content">
               <h4>灵感诞生</h4>
-              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是反映新鲜度最关键的视觉信号</strong>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
+              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是反映新鲜度最关键的视觉信号</strong><sup>[9]</sup>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
             </div>
           </div>
           <div class="timeline-item">
             <div class="timeline-dot dot-aqua" aria-hidden="true">🔬</div>
             <div class="timeline-content">
               <h4>独立研究</h4>
-              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework Based on Attention Mechanism for Fish Freshness Assessment》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
+              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework Based on Attention Mechanism for Fish Freshness Assessment》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标<sup>[10]</sup>），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
             </div>
           </div>
           <div class="timeline-item">
@@ -598,7 +586,7 @@
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🛡️</div>
             <h4>填平经验壁垒</h4>
-            <p>让第一次买鱼的高中生也能拥有<strong>老师傅级别的判别力</strong>，用技术填平"经验鸿沟"。</p>
+            <p>让第一次买鱼的高中生也能拥有<strong>老师傅级别的判别力</strong>，用技术填平"经验鸿沟"<sup>[11]</sup>。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🏥</div>
@@ -668,17 +656,17 @@
         <h2 class="section-title">参考文献</h2>
       </div>
       <ol class="ref-list">
-        <li>Tan, M., &amp; Le, Q. V. (2019). <em>EfficientNet: Rethinking model scaling for convolutional neural networks</em>. Proceedings of the 36th International Conference on Machine Learning (ICML), PMLR 97:6105-6114.</li>
-        <li>Woo, S., Park, J., Lee, J.-Y., &amp; Kweon, I. S. (2018). <em>CBAM: Convolutional block attention module</em>. Proceedings of the European Conference on Computer Vision (ECCV), pp. 3-19.</li>
-        <li>Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &amp; Batra, D. (2017). <em>Grad-CAM: Visual explanations from deep networks via gradient-based localization</em>. Proceedings of the IEEE International Conference on Computer Vision (ICCV), pp. 618-626.</li>
+        <li>Prasetyo, E., Purbaningtyas, R., Adityo, R. D., &amp; Suciati, N. (2022). <em>Combining MobileNetV1 and depthwise separable convolution bottleneck with expansion for classifying the freshness of fish eyes</em>. Information Processing in Agriculture, 9(3): 1086-1097.（FFE 公开数据集来源，Mendeley Data 开源）</li>
+        <li>Yildiz, M. B., Yasin, E. T., &amp; Koklu, M. (2024). <em>Fisheye freshness detection using common deep learning algorithms and machine learning methods with a developed mobile application</em>. European Food Research and Technology, 250(7): 1919-1932.</li>
         <li>Simonyan, K., &amp; Zisserman, A. (2015). <em>Very deep convolutional networks for large-scale image recognition</em>. International Conference on Learning Representations (ICLR 2015).</li>
         <li>He, K., Zhang, X., Ren, S., &amp; Sun, J. (2016). <em>Deep residual learning for image recognition</em>. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 770-778.</li>
         <li>Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., &amp; Chen, L.-C. (2018). <em>MobileNetV2: Inverted residuals and linear bottlenecks</em>. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 4510-4520.</li>
+        <li>Tan, M., &amp; Le, Q. V. (2019). <em>EfficientNet: Rethinking model scaling for convolutional neural networks</em>. Proceedings of the 36th International Conference on Machine Learning (ICML), PMLR 97:6105-6114.</li>
+        <li>Woo, S., Park, J., Lee, J.-Y., &amp; Kweon, I. S. (2018). <em>CBAM: Convolutional block attention module</em>. Proceedings of the European Conference on Computer Vision (ECCV), pp. 3-19.</li>
+        <li>Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &amp; Batra, D. (2017). <em>Grad-CAM: Visual explanations from deep networks via gradient-based localization</em>. Proceedings of the IEEE International Conference on Computer Vision (ICCV), pp. 618-626.</li>
         <li>Lalabadi, H. M., Sadeghi, M., &amp; Mireei, S. A. (2020). <em>Fish freshness categorization from eyes and gills color features using multi-class artificial neural network and support vector machines</em>. Aquacultural Engineering, 90: 102076.</li>
-        <li>Yildiz, M. B., Yasin, E. T., &amp; Koklu, M. (2024). <em>Fisheye freshness detection using common deep learning algorithms and machine learning methods with a developed mobile application</em>. European Food Research and Technology, 250(7): 1919-1932.</li>
-        <li>Madhubhashini, M. N., Liyanage, C. P., Alahakoon, A. U., et al. (2024). <em>Current applications and future trends of artificial senses in fish freshness determination: A review</em>. Journal of Food Science, 89(1): 33-50.</li>
         <li>国家卫生和计划生育委员会 (2015). <em>GB 2733-2015 食品安全国家标准 鲜、冻动物性水产品</em>. 中国标准出版社.</li>
-        <li>Prasetyo, E., Purbaningtyas, R., Adityo, R. D., &amp; Suciati, N. (2022). <em>Combining MobileNetV1 and depthwise separable convolution bottleneck with expansion for classifying the freshness of fish eyes</em>. Information Processing in Agriculture, 9(3): 1086-1097.（FFE 公开数据集来源，Mendeley Data 开源）</li>
+        <li>Madhubhashini, M. N., Liyanage, C. P., Alahakoon, A. U., et al. (2024). <em>Current applications and future trends of artificial senses in fish freshness determination: A review</em>. Journal of Food Science, 89(1): 33-50.</li>
       </ol>
     </section>
 
@@ -707,13 +695,14 @@
       if (!bubblesEl) return;
       if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
       const isMobile = window.matchMedia?.("(max-width: 640px)").matches;
-      const COUNT = isMobile ? 10 : 18;
+      const COUNT = isMobile ? 6 : 12;
       const frag = document.createDocumentFragment();
+      const segment = 100 / COUNT;  // 等分区间，确保均匀分布
       for (let i = 0; i < COUNT; i++) {
         const b = document.createElement("span");
         b.className = "bubble";
         const size = 8 + Math.random() * 32;
-        const left = Math.random() * 100;
+        const left = i * segment + Math.random() * segment;
         const duration = 8 + Math.random() * 10;
         const delay = -Math.random() * duration;
         const sway = (Math.random() * 60 - 30);
