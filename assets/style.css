@@ -163,8 +163,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: radial-gradient(circle, var(--ink) 0%, var(--ink) 35%, var(--foam) 36%, var(--foam) 100%);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
 }
-.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
-.brand-title { font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: 0.2px; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.4; }
+.brand-title { font-weight: 700; font-size: 17px; color: var(--white); letter-spacing: 0.2px; padding-bottom: 2px; }
 .brand-sub { font-size: 11.5px; color: var(--muted); letter-spacing: 0.3px; }
 
 .nav-links { display: flex; gap: var(--space-5); align-items: center; }
@@ -2240,6 +2240,12 @@ footer {
   }
   .bubble, .wave, .glow { display: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; }
+  /* 处理建议卡片动画降级为即时切换 */
+  .advice-card-expandable,
+  .advice-card-expandable .advice-body,
+  .advice-card-expandable .advice-expand-icon {
+    transition: none !important;
+  }
 }
 
 /* ============ 介绍区说明文本 ============ */
@@ -2899,6 +2905,8 @@ select, input[type="file"] {
   border-radius: var(--radius-xl, 16px);
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border, rgba(255,255,255,0.1));
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .topo-node {
   position: relative;
@@ -2907,8 +2915,8 @@ select, input[type="file"] {
   gap: 8px;
   padding: 12px 20px;
   border-radius: var(--radius-md, 10px);
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14.5px;
+  font-weight: 700;
   color: var(--foam, #eaf6fb);
   border: 2px solid;
   max-width: 360px;
@@ -2916,6 +2924,7 @@ select, input[type="file"] {
   justify-content: center;
   text-align: center;
   cursor: default;
+  letter-spacing: 0.01em;
   transition: transform var(--transition, 0.2s), box-shadow var(--transition, 0.2s);
 }
 .topo-node:hover {
@@ -2924,11 +2933,13 @@ select, input[type="file"] {
 }
 .topo-task {
   border-color: var(--sea, #1185b8);
-  background: rgba(17, 133, 184, 0.08);
+  background: rgba(17, 133, 184, 0.16);
+  box-shadow: inset 3px 0 0 var(--sea, #1185b8);
 }
 .topo-agent {
   border-color: var(--aqua, #27d0c4);
-  background: rgba(39, 208, 196, 0.08);
+  background: rgba(39, 208, 196, 0.16);
+  box-shadow: inset 3px 0 0 var(--aqua, #27d0c4);
 }
 .topo-end {
   border-color: var(--muted, #8aa4b8);
@@ -2990,9 +3001,11 @@ select, input[type="file"] {
 
 /* 连接器 */
 .topo-connector {
-  width: 2px;
+  width: 3px;
   height: 24px;
   background: linear-gradient(180deg, var(--border-hover, rgba(39,208,196,0.3)), var(--border, rgba(255,255,255,0.1)));
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* 质量分支 */
@@ -3044,7 +3057,7 @@ select, input[type="file"] {
   background: rgba(239, 91, 91, 0.04);
 }
 .topo-branch-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   text-align: center;
 }
@@ -3054,7 +3067,7 @@ select, input[type="file"] {
 .topo-branch-path .topo-node {
   width: 100%;
   max-width: none;
-  font-size: 12.5px;
+  font-size: 13.5px;
   padding: 10px 12px;
 }
 
@@ -3134,7 +3147,7 @@ select, input[type="file"] {
     min-width: 100%;
   }
   .topo-node {
-    font-size: 12.5px;
+    font-size: 13px;
     padding: 10px 14px;
   }
   .topo-node[data-tip]:hover::after {
@@ -3558,13 +3571,16 @@ select, input[type="file"] {
   padding-top: 0;
   border-top: 1px solid transparent;
   margin-top: 0;
-  transition: max-height 0.35s ease, padding-top 0.35s ease, margin-top 0.35s ease, border-color 0.35s ease;
+  opacity: 0;
+  transition: max-height 0.35s ease, padding 0.35s ease, opacity 0.35s ease, margin-top 0.35s ease, border-color 0.35s ease;
+  will-change: max-height, opacity;
 }
 .advice-card-expandable.is-expanded .advice-body {
-  max-height: 600px;
+  max-height: 800px;
   padding-top: 12px;
   border-top: 1px solid var(--border, rgba(255,255,255,0.08));
   margin-top: 12px;
+  opacity: 1;
 }
 .advice-body ul {
   list-style: none;

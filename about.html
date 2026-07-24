@@ -141,6 +141,8 @@
             <li>肉眼判别依赖个人经验，新手难以掌握</li>
             <li>化学检测成本高、周期长，且<strong>破坏样品</strong></li>
             <li>现有工具只给结论，不告诉"为什么"与"怎么办"</li>
+            <li>便携式仪器单价 <strong>5000-20000 元</strong>，基层摊位难以普及，且需定期校准维护</li>
+            <li>传统感官评估存在<strong>评估者间变异性</strong>，不同检查员对同一样本结论可能不一致</li>
           </ul>
         </div>
         <div class="pain-card solution">
@@ -150,7 +152,7 @@
           </div>
           <ul class="pain-list">
             <li>鱼眼照片一键上传，<strong>零成本非破坏式</strong>检测</li>
-            <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong>；V2（EfficientNet-B0 + ECA + Light CRA）提升至 <strong>99.29%</strong></li>
+            <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99%+</strong>；V2（EfficientNet-B0 + ECA + Light CRA）提升至 <strong>99.29%</strong></li>
             <li>Grad-CAM 热力图解释"为什么"，结构化报告给出"怎么办"</li>
             <li>置信度驱动自适应分支，低置信度主动提示重拍</li>
           </ul>
@@ -262,7 +264,7 @@
         <h2 class="section-title">FishFreshNetV1 模型架构</h2>
       </div>
       <div class="model-arch-content">
-        <p class="intro-sub">基于我撰写的研究论文，FishFreshNetV1 是一个轻量级且可解释的深度学习框架，专为鱼眼新鲜度分类任务设计。模型仅 <strong>4.22M</strong> 参数、<strong>0.41G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.23%</strong> 准确率。</p>
+        <p class="intro-sub">FishFreshNetV1 是一个轻量级且可解释的深度学习框架，专为鱼眼新鲜度分类任务设计。模型仅 <strong>4.22M</strong> 参数、<strong>0.41G</strong> FLOPs，在 MFED 数据集上达到 <strong>99%+</strong> 准确率。</p>
 
         <!-- 架构总览 -->
         <div class="model-flow">
@@ -349,7 +351,7 @@
             <li>对梯度执行全局平均池化，计算每个特征通道的重要性权重</li>
             <li>生成热力图，高亮对模型预测影响最大的图像空间区域</li>
           </ul>
-          <p>论文实验表明：在<strong>正确分类</strong>的案例中，红色高激活区域精准聚焦于<strong>瞳孔和角膜</strong>；在<strong>错误分类</strong>的案例中，高激活区域偏移至眼周明亮鱼鳞或镜面反射光斑——这证实模型确实依据生物学特征做出判断，而非依赖背景捷径。</p>
+          <p>实验表明：在<strong>正确分类</strong>的案例中，红色高激活区域精准聚焦于<strong>瞳孔和角膜</strong>；在<strong>错误分类</strong>的案例中，高激活区域偏移至眼周明亮鱼鳞或镜面反射光斑——这证实模型确实依据生物学特征做出判断，而非依赖背景捷径。</p>
         </div>
 
         <!-- 关键数据 -->
@@ -379,7 +381,7 @@
       <div class="section-head">
         <h2 class="section-title">FishFreshNetV2 模型架构</h2>
       </div>
-      <p class="intro-sub">FishFreshNetV2 是在 V1 基础上完成的学术升级版本，论文标题为《FishFreshNetV2: Lightweight and Interpretable Fish Freshness Assessment from Eye Images》。V2 的核心目标是在保持轻量化的前提下进一步提升精度与可解释性，关键改动有两点：用 <strong>ECA</strong> 替代 CBAM 作为通道注意力，并新增 <strong>Light CRA</strong>（Light Circular Region Attention）鱼眼专用区域注意力。模型仅 <strong>4.095M</strong> 参数、<strong>0.414G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.29%</strong> 准确率。</p>
+      <p class="intro-sub">FishFreshNetV2 是在 V1 基础上完成的学术升级版本。V2 的核心目标是在保持轻量化的前提下进一步提升精度与可解释性，关键改动有两点：用 <strong>ECA</strong> 替代 CBAM 作为通道注意力，并新增 <strong>Light CRA</strong>（Light Circular Region Attention）鱼眼专用区域注意力。模型仅 <strong>4.095M</strong> 参数、<strong>0.414G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.29%</strong> 准确率。</p>
 
       <!-- 模型前向流程图 -->
       <div class="model-flow">
@@ -643,11 +645,6 @@
           </table>
         </div>
 
-        <!-- 图例 -->
-        <div class="topo-legend">
-          <span class="topo-legend-item"><span class="topo-legend-dot topo-agent-dot"></span> agent 节点（调用大模型）</span>
-          <span class="topo-legend-item"><span class="topo-legend-dot topo-task-dot"></span> task 节点（纯数据处理）</span>
-        </div>
       </div>
     </section>
 
@@ -669,7 +666,7 @@
             <div class="timeline-dot dot-aqua" aria-hidden="true">🔬</div>
             <div class="timeline-content">
               <h3>独立研究</h3>
-              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework Based on Attention Mechanism for Fish Freshness Assessment》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标<sup>[11]</sup>），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
+              <p>独立设计 <strong>EfficientNet-B0 + CBAM</strong> 架构（FishFreshNetV1），构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标<sup>[11]</sup>），达成 <strong>99%+ 准确率</strong>。数据集开源至 Mendeley Data。</p>
             </div>
           </div>
           <div class="timeline-item">
@@ -763,7 +760,7 @@
           <div class="iter-phase">
             <h3>短期（1–3 个月）</h3>
             <ul>
-              <li><strong>MC Dropout 推理置信度量化</strong>（论文未来工作）</li>
+              <li><strong>MC Dropout 推理置信度量化</strong>（后续工作方向）</li>
               <li>受控混淆因子训练（防背景反光干扰）</li>
               <li>数据集扩充到 <strong>1 万+</strong> 张</li>
               <li>批量分析功能上线</li>
@@ -781,7 +778,7 @@
           <div class="iter-phase">
             <h3>长期（1 年以上）</h3>
             <ul>
-              <li><strong>实时场景验证</strong>（论文局限性突破）</li>
+              <li><strong>实时场景验证</strong>（当前局限突破）</li>
               <li>B 端 SaaS 平台</li>
               <li>G 端监管平台（<strong>明厨亮灶</strong>接入）</li>
               <li>多模态融合（图像 + 气味 + 质地 + 温度）</li>

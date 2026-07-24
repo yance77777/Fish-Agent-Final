@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fish-Agent" />
-  <meta name="description" content="Fish-Agent — 上传鱼眼照片，AI 秒级分析水产品新鲜度。支持 FishFreshNetV1（经典版）和 FishFreshNetV2（高精度版）双模型，99.23% 准确率，Grad-CAM 可解释热力图。" />
+  <meta name="description" content="Fish-Agent — 上传鱼眼照片，AI 秒级分析水产品新鲜度。支持 FishFreshNetV1（经典版）和 FishFreshNetV2（高精度版）双模型，99%+ 准确率，Grad-CAM 可解释热力图。" />
   <meta name="keywords" content="鱼眼新鲜度检测,水产品新鲜度,AI食品检测,FishFreshNetV1,FishFreshNetV2,Grad-CAM,深度学习,食品安全" />
   <meta name="author" content="祈雨柒" />
   <meta property="og:title" content="Fish-Agent · 水产品新鲜度智能评估" />
-  <meta property="og:description" content="上传鱼眼照片，AI 秒级分析新鲜度。支持 V1/V2 双模型切换，99.23% 准确率 + Grad-CAM 可解释热力图。" />
+  <meta property="og:description" content="上传鱼眼照片，AI 秒级分析新鲜度。支持 V1/V2 双模型切换，99%+ 准确率 + Grad-CAM 可解释热力图。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://yance77777.github.io/Fish-Agent/" />
   <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%2304162b'/%3E%3Ccircle cx='600' cy='270' r='130' fill='none' stroke='%2327d0c4' stroke-width='8'/%3E%3Ccircle cx='600' cy='270' r='85' fill='%2327d0c4'/%3E%3Ccircle cx='600' cy='270' r='48' fill='%2304162b'/%3E%3Ccircle cx='578' cy='248' r='18' fill='%23ffffff' opacity='0.7'/%3E%3Ctext x='600' y='490' font-family='system-ui,-apple-system,sans-serif' font-size='68' font-weight='800' fill='%23ffffff' text-anchor='middle'%3EFish-Agent%3C/text%3E%3C/svg%3E" />
@@ -190,7 +190,7 @@
       <div class="hero-badges" role="list">
         <span class="badge" role="listitem">
           <span class="badge-icon" aria-hidden="true">🐟</span>
-          <span class="badge-num" data-count="99.23" data-suffix="%">0%</span> 准确率
+          <span class="badge-num" data-count="99" data-suffix="%+">0%</span> 准确率
         </span>
         <span class="badge" role="listitem">
           <span class="badge-icon" aria-hidden="true">⚡</span>
@@ -2662,7 +2662,41 @@
     }
 
     // ---- 导出 PDF 报告（专业排版） ----
-    function exportPDF() {
+    // 将 File 转为 base64 DataURL（保证在新窗口中可用，避免 blob URL 失效）
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 将 img 元素转为 base64 DataURL；已是 data: 直接返回，否则用 canvas 转换
+    function imgToDataURL(imgElement) {
+      return new Promise((resolve) => {
+        if (!imgElement || !imgElement.src || imgElement.src === "" || imgElement.src.endsWith("#")) {
+          resolve("");
+          return;
+        }
+        const src = imgElement.src;
+        if (src.startsWith("data:")) { resolve(src); return; }
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = imgElement.naturalWidth || 400;
+          canvas.height = imgElement.naturalHeight || 400;
+          if (!canvas.width || !canvas.height) { resolve(src); return; }
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(imgElement, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        } catch (e) {
+          // 跨域污染时回退到原始 src
+          resolve(src);
+        }
+      });
+    }
+
+    async function exportPDF() {
       if (!lastAnalysisResult) {
         showToast("暂无可导出的分析结果", "error");
         return;
@@ -2677,114 +2711,156 @@
       const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
       const duration = lastAnalysisResult.__processingTime ? `${lastAnalysisResult.__processingTime.toFixed(1)}s` : "—";
       const isSim = offlineMode;
-      const imgSrc = selectedFile ? URL.createObjectURL(selectedFile) : "";
-      const heatmapSrc = (compareHeatmap && compareHeatmap.src && !compareHeatmap.src.endsWith("#")) ? compareHeatmap.src : "";
 
-      // 建议数据
-      const recs = lastAnalysisResult.recommendations || defaultRecs[pred.freshness_label ?? 0] || {};
+      // 预转换图片为 base64 DataURL（避免 blob URL 在新窗口失效）
+      let imgSrc = "";
+      if (selectedFileDataURL) {
+        imgSrc = selectedFileDataURL;
+      } else if (selectedFile) {
+        try { imgSrc = await fileToDataURL(selectedFile); } catch (e) { imgSrc = ""; }
+      }
+      const heatmapSrc = await imgToDataURL(compareHeatmap);
+
+      // 建议数据（局部定义，修复原 defaultRecs 作用域不可达导致 ReferenceError 的崩溃问题）
+      const pdfDefaultRecs = {
+        0: {
+          storage: ["0–4°C 冷藏保存", "避免反复解冻", "可存放 24–48 小时"],
+          consumption: ["尽快食用获得最佳口感", "清蒸或刺身为优选", "搭配柠檬汁去腥提鲜"],
+          handling: ["从冰箱取出后直接处理", "用利刀去除鱼鳞", "清理内脏时保持鱼眼完整"],
+          safety: ["鱼眼清澈，可放心食用", "注意检查鳃部是否鲜红", "食用前确认无异味"],
+          best: ["购买后 2 小时内处理最佳", "处理前后勤洗手", "使用专用砧板避免交叉污染"]
+        },
+        1: {
+          storage: ["0–4°C 冷藏", "如需长期保存请冷冻", "建议 12 小时内食用"],
+          consumption: ["建议 12–24 小时内食用", "推荐红烧或煎炸", "充分加热至中心温度 70°C 以上"],
+          handling: ["解冻后在冷水中冲洗", "去除鱼鳃和内脏", "切块烹饪更易入味"],
+          safety: ["鱼眼基本清澈，可正常食用", "注意观察是否有异味", "烹饪时间适当延长"],
+          best: ["尽快处理不宜久放", "冷冻保存前用保鲜膜包裹", "解冻后不要再次冷冻"]
+        },
+        2: {
+          storage: ["不建议继续储存", "如必须保存请深度冷冻", "尽快处理或丢弃"],
+          consumption: ["不建议食用", "可能存在食品安全风险", "如必须食用需充分高温烹饪"],
+          handling: ["佩戴手套处理", "避免接触其他食材", "处理工具需彻底消毒"],
+          safety: ["⚠ 鱼眼浑浊，请谨慎对待", "如有异味立即丢弃", "孕妇和儿童禁止食用"],
+          best: ["购买时注意辨别新鲜度", "选择信誉良好的商家", "保留购买凭证以便追溯"]
+        }
+      };
+      const recs = lastAnalysisResult.recommendations || pdfDefaultRecs[pred.freshness_label ?? 0] || {};
+      const bestPractices = recs.best_practices || recs.best || [];
       const buildRecList = (items) => (items || []).map(i => `<li>${i}</li>`).join("");
 
       // 置信度颜色
       const confColor = parseFloat(conf) >= 80 ? "#27d0c4" : parseFloat(conf) >= 60 ? "#f5b54a" : "#ef5b5b";
       const levelColor = level === "高度新鲜" ? "#27d0c4" : level === "新鲜" ? "#f5b54a" : "#ef5b5b";
 
+      // 概率分布行
+      const probRows = Object.entries(probs).map(([k, v]) => {
+        const pct = (v * 100).toFixed(1);
+        const c = k === "高度新鲜" ? "#27d0c4" : k === "新鲜" ? "#f5b54a" : "#ef5b5b";
+        return `<div class="prob-bar"><div class="label">${k}</div><div class="track"><div class="fill" style="width:${pct}%;background:${c};"></div></div><div class="val">${pct}%</div></div>`;
+      }).join("");
+
+      // 趋势预测与知识图谱文案
+      const shelfLife = pred.freshness_label === 0 ? "24–48 小时" : pred.freshness_label === 1 ? "12–24 小时" : "不建议储存";
+      const kgMatch = pred.freshness_label === 0
+        ? "标准特征：角膜透明、瞳孔清晰、表面有自然光泽。当前样本匹配度高。"
+        : pred.freshness_label === 1
+        ? "标准特征：角膜略浑浊、瞳孔尚可辨认。当前样本与中等新鲜特征匹配。"
+        : "标准特征：角膜浑浊、瞳孔模糊、表面失去光泽。当前样本与不新鲜特征匹配。";
+
+      // 图像块（原图 + Grad-CAM 热力图并排）
+      const origBlock = imgSrc
+        ? `<div class="img-wrap"><img src="${imgSrc}" alt="鱼眼照片"></div>`
+        : `<div class="img-wrap img-empty"><span>无原图</span></div>`;
+      const heatBlock = heatmapSrc
+        ? `<div class="img-wrap"><img src="${heatmapSrc}" alt="Grad-CAM 热力图"></div>`
+        : "";
+
       const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
 <title>Fish-Agent 新鲜度分析报告</title>
 <style>
-  @page { margin: 0; size: A4; }
+  @page { margin: 10mm; size: A4; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; color: #1a2b3c; background: #fff; }
-  .page { width: 210mm; min-height: 297mm; padding: 18mm 16mm; position: relative; }
-  /* 头部 */
-  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #27d0c4; padding-bottom: 12px; margin-bottom: 20px; }
-  .brand { font-size: 22px; font-weight: 800; color: #04162b; letter-spacing: -0.5px; }
+  html, body { width: 190mm; }
+  body { font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; color: #1a2b3c; background: #fff; font-size: 12px; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 190mm; }
+  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #27d0c4; padding-bottom: 8px; margin-bottom: 12px; }
+  .brand { font-size: 16px; font-weight: 800; color: #04162b; letter-spacing: -0.3px; }
   .brand span { color: #27d0c4; }
-  .report-meta { text-align: right; font-size: 11px; color: #6a7d8f; line-height: 1.6; }
-  .report-meta strong { color: #04162b; }
-  /* 标题 */
-  .report-title { font-size: 18px; font-weight: 700; color: #04162b; margin-bottom: 16px; padding-left: 10px; border-left: 4px solid #27d0c4; }
-  /* 结果卡片 */
-  .result-card { background: linear-gradient(135deg, #f0faf9 0%, #e6f7f5 100%); border-radius: 12px; padding: 20px; margin-bottom: 16px; display: flex; gap: 20px; align-items: center; }
-  .result-card .img-wrap { width: 90px; height: 90px; border-radius: 10px; overflow: hidden; flex-shrink: 0; border: 2px solid #27d0c4; }
-  .result-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  .result-card .info { flex: 1; }
-  .result-card .level { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
-  .result-card .conf { font-size: 14px; color: #4a5e6e; }
-  .result-card .conf strong { font-size: 20px; font-variant-numeric: tabular-nums; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
-  /* 概率分布 */
-  .prob-section { margin-bottom: 16px; }
-  .prob-section h3 { font-size: 13px; color: #4a5e6e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-  .prob-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-  .prob-bar .label { width: 80px; font-size: 13px; font-weight: 500; color: #1a2b3c; }
-  .prob-bar .track { flex: 1; height: 18px; background: #eef2f5; border-radius: 9px; overflow: hidden; }
-  .prob-bar .fill { height: 100%; border-radius: 9px; transition: width 0.3s; }
-  .prob-bar .val { width: 50px; text-align: right; font-size: 12px; font-weight: 600; color: #4a5e6e; font-variant-numeric: tabular-nums; }
-  /* 详细报告 */
-  .detail-section { margin-bottom: 16px; }
-  .detail-section h3 { font-size: 13px; color: #4a5e6e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-  .detail-item { background: #f8fafb; border-left: 3px solid #27d0c4; padding: 10px 14px; margin-bottom: 8px; border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.7; color: #2a3b4c; }
+  .report-meta { text-align: right; font-size: 10px; color: #6a7d8f; line-height: 1.55; }
+  .report-meta strong { color: #04162b; font-size: 12px; }
+  .section { margin-bottom: 12px; }
+  .section h3 { font-size: 12px; color: #4a5e6e; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .result-card { background: linear-gradient(135deg, #f0faf9 0%, #e6f7f5 100%); border-radius: 10px; padding: 8px; display: flex; gap: 6px; align-items: stretch; }
+  .result-card .img-wrap { width: 75mm; height: 75mm; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 2px solid #27d0c4; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .result-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .result-card .img-empty { color: #8a9bad; font-size: 11px; }
+  .result-card .info { flex: 1; padding: 6px 8px; display: flex; flex-direction: column; justify-content: center; }
+  .result-card .level { font-size: 22px; font-weight: 800; margin-bottom: 8px; line-height: 1.2; }
+  .result-card .conf { font-size: 12px; color: #4a5e6e; margin-bottom: 4px; }
+  .result-card .conf strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .result-card .meta-line { font-size: 10px; color: #6a7d8f; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  .prob-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .prob-bar .label { width: 64px; font-size: 11px; font-weight: 500; color: #1a2b3c; }
+  .prob-bar .track { flex: 1; height: 14px; background: #eef2f5; border-radius: 7px; overflow: hidden; }
+  .prob-bar .fill { height: 100%; border-radius: 7px; }
+  .prob-bar .val { width: 44px; text-align: right; font-size: 11px; font-weight: 600; color: #4a5e6e; font-variant-numeric: tabular-nums; }
+  .detail-item { background: #f8fafb; border-left: 3px solid #27d0c4; padding: 6px 10px; margin-bottom: 5px; border-radius: 0 6px 6px 0; font-size: 11px; line-height: 1.55; color: #2a3b4c; }
   .detail-item strong { color: #04162b; }
-  /* 建议表格 */
-  .advice-section { margin-bottom: 16px; }
-  .advice-section h3 { font-size: 13px; color: #4a5e6e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-  .advice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .advice-box { background: #f8fafb; border: 1px solid #e2e8ed; border-radius: 8px; padding: 12px; }
-  .advice-box h4 { font-size: 12px; font-weight: 700; color: #27d0c4; margin-bottom: 6px; }
+  .advice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .advice-box { background: #f8fafb; border: 1px solid #e2e8ed; border-radius: 8px; padding: 7px 10px; }
+  .advice-box.full { grid-column: 1 / -1; }
+  .advice-box h4 { font-size: 11px; font-weight: 700; color: #27d0c4; margin-bottom: 4px; }
   .advice-box ul { list-style: none; padding: 0; }
-  .advice-box li { font-size: 11.5px; color: #3a4d5e; line-height: 1.6; padding-left: 12px; position: relative; margin-bottom: 3px; }
+  .advice-box li { font-size: 10px; color: #3a4d5e; line-height: 1.5; padding-left: 10px; position: relative; margin-bottom: 2px; }
   .advice-box li::before { content: "•"; position: absolute; left: 2px; color: #27d0c4; font-weight: 700; }
-  /* 页脚 */
-  .footer { position: absolute; bottom: 10mm; left: 16mm; right: 16mm; border-top: 1px solid #e2e8ed; padding-top: 8px; display: flex; justify-content: space-between; font-size: 10px; color: #8a9bad; }
-  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; font-weight: 900; color: rgba(39,208,196,0.04); pointer-events: none; white-space: nowrap; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .page { page-break-after: always; } }
+  .footer { margin-top: 10px; border-top: 1px solid #e2e8ed; padding-top: 6px; display: flex; justify-content: space-between; font-size: 10px; color: #8a9bad; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style></head><body>
 <div class="page">
-  <div class="watermark">Fish-Agent</div>
   <div class="header">
     <div class="brand">🐟 Fish-Agent<span> · AI</span></div>
     <div class="report-meta">
       <strong>水产品新鲜度分析报告</strong><br>
       生成时间：${ts}<br>
-      模型：${model}${isSim ? '（离线模拟）' : ''} · 耗时：${duration}
+      模型：${model}${isSim ? "（离线模拟）" : ""} · 耗时：${duration}
     </div>
   </div>
 
-  <div class="report-title">分析结果概览</div>
-
-  <div class="result-card">
-    ${imgSrc ? `<div class="img-wrap"><img src="${imgSrc}" alt="鱼眼照片" width="400" height="300"></div>` : ""}
-    <div class="info">
-      <div class="level" style="color:${levelColor};">${level}${isSim ? '<span class="badge" style="background:#fef3cd;color:#856404;">模拟数据</span>' : ""}</div>
-      <div class="conf">置信度 <strong style="color:${confColor};">${conf}%</strong> · 基于 ${model}</div>
+  <div class="section">
+    <h3>分析结果概览</h3>
+    <div class="result-card">
+      ${origBlock}
+      ${heatBlock}
+      <div class="info">
+        <div class="level" style="color:${levelColor};">${level}${isSim ? '<span class="badge" style="background:#fef3cd;color:#856404;">模拟数据</span>' : ""}</div>
+        <div class="conf">置信度 <strong style="color:${confColor};">${conf}%</strong></div>
+        <div class="meta-line">基于 ${model} · Grad-CAM 可解释性分析</div>
+      </div>
     </div>
   </div>
 
-  <div class="prob-section">
+  <div class="section">
     <h3>三类概率分布</h3>
-    ${Object.entries(probs).map(([k, v]) => {
-      const pct = (v * 100).toFixed(1);
-      const c = k === "高度新鲜" ? "#27d0c4" : k === "新鲜" ? "#f5b54a" : "#ef5b5b";
-      return `<div class="prob-bar"><div class="label">${k}</div><div class="track"><div class="fill" style="width:${pct}%;background:${c};"></div></div><div class="val">${pct}%</div></div>`;
-    }).join("")}
+    ${probRows}
   </div>
 
-  <div class="detail-section">
+  <div class="section">
     <h3>详细分析</h3>
     <div class="detail-item"><strong>鱼眼外观评估：</strong>${desc}</div>
-    <div class="detail-item"><strong>趋势预测：</strong>剩余保质时间约 <strong>${pred.freshness_label === 0 ? "24–48 小时" : pred.freshness_label === 1 ? "12–24 小时" : "不建议储存"}</strong>。建议在此窗口内食用以保障口感与安全。</div>
-    <div class="detail-item"><strong>知识图谱匹配：</strong>${pred.freshness_label === 0 ? "✅ 标准特征：角膜透明、瞳孔清晰、表面有自然光泽。当前样本匹配度高。" : pred.freshness_label === 1 ? "✅ 标准特征：角膜略浑浊、瞳孔尚可辨认。当前样本与中等新鲜特征匹配。" : "✅ 标准特征：角膜浑浊、瞳孔模糊、表面失去光泽。当前样本与不新鲜特征匹配。"}</div>
+    <div class="detail-item"><strong>趋势预测：</strong>剩余保质时间约 <strong>${shelfLife}</strong>。建议在此窗口内食用以保障口感与安全。</div>
+    <div class="detail-item"><strong>知识图谱匹配：</strong>${kgMatch}</div>
   </div>
 
-  ${heatmapSrc ? `<div class="detail-section"><h3>Grad-CAM 可解释性热力图</h3><div style="text-align:center;"><img src="${heatmapSrc}" alt="Grad-CAM 热力图" width="200" height="200" style="max-width:200px;border-radius:8px;border:2px solid #27d0c4;"></div></div>` : ""}
-
-  <div class="advice-section">
+  <div class="section">
     <h3>处理建议</h3>
     <div class="advice-grid">
       <div class="advice-box"><h4>❄ 储存建议</h4><ul>${buildRecList(recs.storage)}</ul></div>
       <div class="advice-box"><h4>🍽 食用建议</h4><ul>${buildRecList(recs.consumption)}</ul></div>
       <div class="advice-box"><h4>🔪 处理建议</h4><ul>${buildRecList(recs.handling)}</ul></div>
       <div class="advice-box"><h4>⚠ 安全警告</h4><ul>${buildRecList(recs.safety)}</ul></div>
+      ${bestPractices && bestPractices.length ? `<div class="advice-box full"><h4>✨ 最佳实践</h4><ul>${buildRecList(bestPractices)}</ul></div>` : ""}
     </div>
   </div>
 
@@ -2800,17 +2876,25 @@
         showToast("请允许弹窗以导出 PDF 报告", "error", 3000);
         return;
       }
-      if (win) { win.opener = null; }
+      win.opener = null;
       win.document.write(html);
       win.document.close();
-      // 等待图片加载后触发打印
-      win.onload = () => {
-        setTimeout(() => {
-          win.focus();
-          win.print();
-          if (imgSrc) URL.revokeObjectURL(imgSrc);
-        }, 500);
-      };
+
+      // 等待所有图片加载完成后触发打印（不依赖 win.onload，document.write 后该事件不稳定）
+      const images = win.document.querySelectorAll("img");
+      const imgPromises = Array.from(images).map(img =>
+        (img.complete && img.naturalWidth > 0)
+          ? Promise.resolve()
+          : new Promise(r => { img.onload = r; img.onerror = r; })
+      );
+      Promise.race([
+        Promise.all(imgPromises),
+        new Promise(r => setTimeout(r, 3000))
+      ]).then(() => {
+        win.focus();
+        win.print();
+      });
+
       showToast("PDF 报告已生成，请在打印对话框选择「另存为 PDF」", "success", 3500);
     }
 
