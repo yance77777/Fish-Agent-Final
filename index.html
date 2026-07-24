@@ -929,48 +929,67 @@
       if (file) handleFileSelect(file);
     });
 
-    // —— 内置示例图片选择（预加载 + 即时响应） ——
+    // —— 内置示例图片选择（预加载 + 即时响应 + 错误恢复） ——
     const sampleCard = document.getElementById("sampleCard");
     let sampleLoading = false;
     const sampleBlobCache = {}; // 预加载缓存
+    const samplePreloadStatus = {}; // 'loading' | 'ready' | 'error'
 
     // 页面加载时预取三张示例图片为 Blob，点击时零延迟构造 File
-    ["highly-fresh", "fresh", "not-fresh"].forEach((name) => {
-      fetch(`assets/samples/${name}.png`)
-        .then((r) => r.ok ? r.blob() : Promise.reject(r.status))
-        .then((blob) => { sampleBlobCache[name] = blob; })
-        .catch(() => {});
-    });
+    function preloadSample(name) {
+      samplePreloadStatus[name] = "loading";
+      return fetch(`assets/samples/${name}.png`)
+        .then((r) => (r.ok ? r.blob() : Promise.reject(r.status)))
+        .then((blob) => {
+          if (blob.size === 0) throw new Error("空文件");
+          sampleBlobCache[name] = blob;
+          samplePreloadStatus[name] = "ready";
+        })
+        .catch(() => {
+          samplePreloadStatus[name] = "error";
+        });
+    }
+    ["highly-fresh", "fresh", "not-fresh"].forEach(preloadSample);
 
     document.querySelectorAll(".sample-tag").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (sampleLoading) return;
         sampleLoading = true;
-        document.querySelectorAll(".sample-tag").forEach(b => b.disabled = true);
+        btn.classList.add("is-loading");
+        document.querySelectorAll(".sample-tag").forEach((b) => (b.disabled = true));
         const sampleName = btn.dataset.sample;
-        // 立即启动卡片消失动画，与图片加载并行
-        sampleCard.classList.add("is-hidden");
+
         try {
           let blob = sampleBlobCache[sampleName];
+          // 缓存未命中或预加载失败时重新获取
           if (!blob) {
-            // 缓存未命中时回退到实时 fetch
-            const resp = await fetch(`assets/samples/${sampleName}.png`);
-            if (!resp.ok) throw new Error("HTTP " + resp.status);
-            blob = await resp.blob();
+            if (samplePreloadStatus[sampleName] === "error") {
+              await preloadSample(sampleName);
+              blob = sampleBlobCache[sampleName];
+            }
+            if (!blob) {
+              const resp = await fetch(`assets/samples/${sampleName}.png`);
+              if (!resp.ok) throw new Error("HTTP " + resp.status);
+              blob = await resp.blob();
+            }
           }
-          if (blob.size === 0) throw new Error("空文件");
+          if (!blob || blob.size === 0) throw new Error("图片数据无效");
+
+          // Blob 确认后才隐藏卡片，避免加载失败时卡片闪烁
+          sampleCard.classList.add("is-hidden");
+
           const file = new File([blob], sampleName + ".png", { type: "image/png" });
           const dt = new DataTransfer();
           dt.items.add(file);
           fileInput.files = dt.files;
           fileInput.dispatchEvent(new Event("change", { bubbles: true }));
         } catch (err) {
-          // 加载失败时恢复卡片显示
           sampleCard.classList.remove("is-hidden");
-          showToast("示例图片加载失败，请重试", "error");
+          showToast("示例图片加载失败，请检查网络后重试", "error");
         } finally {
           sampleLoading = false;
-          document.querySelectorAll(".sample-tag").forEach(b => b.disabled = false);
+          btn.classList.remove("is-loading");
+          document.querySelectorAll(".sample-tag").forEach((b) => (b.disabled = false));
         }
       });
     });
@@ -1047,7 +1066,10 @@
 
     // —— 预览区按钮 ——
     clearBtn.addEventListener("click", clearImage);
-    reuploadBtn.addEventListener("click", openFileDialog);
+    reuploadBtn.addEventListener("click", () => {
+      clearImage();
+      openFileDialog();
+    });
 
     // ============ Hero 数字 countUp 动画 ============
     /**
