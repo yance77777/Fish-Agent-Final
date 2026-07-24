@@ -7,6 +7,12 @@
   <meta name="robots" content="noindex" />
   <title>404 · Fish-Agent</title>
   <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .btn-404-home { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .btn-404-home:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(39, 208, 196, 0.5); }
+    .btn-404-home:focus-visible { outline: 2px solid var(--aqua, #27d0c4); outline-offset: 3px; border-radius: 12px; }
+    @media (prefers-reduced-motion: reduce) { .btn-404-home:hover { transform: none; } }
+  </style>
 </head>
 <body>
   <a href="index.html" class="skip-link">回到首页</a>
@@ -21,7 +27,7 @@
     <div style="font-family:'Orbitron',sans-serif; font-size:clamp(72px,15vw,120px); font-weight:800; background:linear-gradient(135deg,#fff,#27d0c4); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; line-height:1; margin-bottom:16px;">404</div>
     <p style="font-size:clamp(18px,3vw,24px); color:#eaf6fb; font-weight:600; margin-bottom:8px;">这条鱼游走了 🐟</p>
     <p style="font-size:14px; color:#8aa4b8; margin-bottom:32px;">你访问的页面不存在，但 Fish-Agent 还在帮你检测新鲜度。</p>
-    <a href="index.html" style="display:inline-flex; align-items:center; gap:8px; padding:12px 28px; background:linear-gradient(135deg,#27d0c4,#1185b8); color:#04162b; font-weight:700; font-size:15px; border-radius:12px; text-decoration:none; box-shadow:0 8px 24px rgba(39,208,196,0.35); transition:transform 0.3s;">
+    <a href="index.html" class="btn-404-home" style="display:inline-flex; align-items:center; gap:8px; padding:12px 28px; background:linear-gradient(135deg,#27d0c4,#1185b8); color:#04162b; font-weight:700; font-size:15px; border-radius:12px; text-decoration:none; box-shadow:0 8px 24px rgba(39,208,196,0.35);">
       ← 回到 Fish-Agent 首页
     </a>
   </main>

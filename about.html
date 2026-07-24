@@ -713,15 +713,21 @@
       bubblesEl.appendChild(frag);
     }
 
-    // 导航菜单
+    // 导航菜单（焦点陷阱 + 焦点管理 + Escape 关闭）
     function initHamburgerMenu() {
       const toggle = document.getElementById("navToggle");
       const overlay = document.getElementById("navOverlay");
       if (!toggle || !overlay) return;
+      let lastFocused = null;
+
       const openMenu = () => {
+        lastFocused = document.activeElement;
         overlay.hidden = false;
         toggle.classList.add("is-open");
         toggle.setAttribute("aria-expanded", "true");
+        // 焦点移入菜单
+        const firstLink = overlay.querySelector("a");
+        firstLink?.focus();
         document.body.style.overflow = "hidden";
       };
       const closeMenu = () => {
@@ -729,10 +735,27 @@
         toggle.classList.remove("is-open");
         toggle.setAttribute("aria-expanded", "false");
         document.body.style.overflow = "";
+        lastFocused?.focus();
       };
+
       toggle.addEventListener("click", () => overlay.hidden ? openMenu() : closeMenu());
+      // 点击链接后关闭
       overlay.querySelectorAll("[data-close]").forEach(a => a.addEventListener("click", closeMenu));
+      // Escape 关闭
       document.addEventListener("keydown", e => { if (e.key === "Escape" && !overlay.hidden) closeMenu(); });
+      // 焦点陷阱：Tab 在菜单内循环
+      overlay.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab" || overlay.hidden) return;
+        const focusable = [...overlay.querySelectorAll("a, button")];
+        const idx = focusable.indexOf(document.activeElement);
+        if (e.shiftKey && idx === 0) {
+          e.preventDefault();
+          focusable[focusable.length - 1]?.focus();
+        } else if (!e.shiftKey && idx === focusable.length - 1) {
+          e.preventDefault();
+          focusable[0]?.focus();
+        }
+      });
     }
 
     // 入场动画

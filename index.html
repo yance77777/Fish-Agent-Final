@@ -84,9 +84,9 @@
               <stop offset="100%" stop-color="#a8f5ee" />
             </radialGradient>
             <radialGradient id="pupilGrad" cx="40%" cy="35%" r="65%">
-              <stop offset="0%" stop-color="#1a2238" />
-              <stop offset="60%" stop-color="#000814" />
-              <stop offset="100%" stop-color="#000000" />
+              <stop id="pupilStop0" offset="0%" stop-color="#1a2238" />
+              <stop id="pupilStop1" offset="60%" stop-color="#000814" />
+              <stop id="pupilStop2" offset="100%" stop-color="#000000" />
             </radialGradient>
             <radialGradient id="corneaGrad" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
@@ -164,8 +164,8 @@
           <circle cx="120" cy="120" r="55" fill="none" stroke="#27d0c4" stroke-width="2" opacity="0.4" />
           <circle cx="120" cy="120" r="42" fill="none" stroke="#a8f5ee" stroke-width="1" opacity="0.3" />
 
-          <!-- 瞳孔 -->
-          <circle cx="120" cy="120" r="36" fill="url(#pupilGrad)" />
+          <!-- 瞳孔（跟随鼠标 + 加载放大 + 置信度变色） -->
+          <circle id="heroPupil" class="hero-pupil" cx="120" cy="120" r="36" fill="url(#pupilGrad)" />
 
           <!-- 角膜高光反射 -->
           <circle cx="120" cy="120" r="78" fill="url(#corneaGrad)" />
@@ -204,6 +204,18 @@
       <div class="section-head">
         <h2 class="section-title" id="upload-title">上传鱼眼照片</h2>
         <span class="section-hint">支持点击 · 拖拽 · 粘贴</span>
+      </div>
+
+      <!-- 模型选择（Session 24） -->
+      <div class="model-selector" id="modelSelector">
+        <label class="model-selector-label" for="modelVersionSelect">模型版本</label>
+        <div class="model-selector-wrap">
+          <select id="modelVersionSelect" class="model-select" aria-label="选择模型版本">
+            <option value="v2" selected>V2（推荐）</option>
+            <option value="v1">V1（经典版）</option>
+          </select>
+          <span class="model-selector-offline" id="modelSelectorOffline" hidden>离线模式</span>
+        </div>
       </div>
 
       <!-- 隐藏的文件输入框（放在上传区外部，避免 click 事件冒泡递归） -->
@@ -317,37 +329,30 @@
         <p class="result-sub">基于 FishFreshNetV1 深度学习模型 + Grad-CAM 可解释热力图</p>
       </div>
 
-      <!-- 骨架屏：分析中 -->
-      <div class="skeleton-wrap" id="skeletonWrap" aria-hidden="true">
+      <!-- 骨架屏：分析中（概览 Tab，默认激活） -->
+      <div class="skeleton-wrap skel-overview" id="skeletonWrap" aria-hidden="true">
         <div class="skel-row">
-          <div class="skeleton skeleton-circle"></div>
-          <div style="flex:1">
-            <div class="skeleton skeleton-box" style="width:50%; margin-bottom:10px;"></div>
-            <div class="skeleton skeleton-box" style="width:80%; margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-box" style="width:65%;"></div>
+          <div class="skeleton skeleton-circle" style="width:120px;height:120px;flex:none;"></div>
+          <div class="skel-overview-text">
+            <div class="skeleton skeleton-text" style="width:60%;"></div>
+            <div class="skeleton skeleton-text" style="width:40%;"></div>
+            <div class="skeleton skeleton-box" style="width:80%;height:18px;"></div>
           </div>
         </div>
-        <div style="margin-bottom:24px;">
-          <div class="skeleton skeleton-box" style="width:100%; height:10px; margin-bottom:16px;"></div>
+        <div class="skel-prob-list">
+          <div class="skel-prob-row">
+            <div class="skeleton skeleton-text" style="width:80px;flex:none;"></div>
+            <div class="skeleton skeleton-box"></div>
+          </div>
+          <div class="skel-prob-row">
+            <div class="skeleton skeleton-text" style="width:80px;flex:none;"></div>
+            <div class="skeleton skeleton-box"></div>
+          </div>
+          <div class="skel-prob-row">
+            <div class="skeleton skeleton-text" style="width:80px;flex:none;"></div>
+            <div class="skeleton skeleton-box"></div>
+          </div>
         </div>
-        <div class="skel-prob-row">
-          <div class="skeleton skeleton-box" style="width:50px; flex:0 0 auto;"></div>
-          <div class="skeleton skeleton-box" style="flex:1;"></div>
-        </div>
-        <div class="skel-prob-row">
-          <div class="skeleton skeleton-box" style="width:50px; flex:0 0 auto;"></div>
-          <div class="skeleton skeleton-box" style="flex:1;"></div>
-        </div>
-        <div class="skel-prob-row" style="margin-bottom:24px;">
-          <div class="skeleton skeleton-box" style="width:50px; flex:0 0 auto;"></div>
-          <div class="skeleton skeleton-box" style="flex:1;"></div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
-          <div class="skeleton skeleton-img"></div>
-          <div class="skeleton skeleton-img"></div>
-        </div>
-        <div class="skeleton skeleton-text" style="width:100%;"></div>
-        <div class="skeleton skeleton-text" style="width:60%;"></div>
       </div>
 
       <!-- 结果面板：4-tab 分析报告（Session 4 重构） -->
@@ -496,6 +501,19 @@
 
         <!-- Tab 2：AI 视觉分析 -->
         <div class="report-tabpane" data-pane="vision" role="tabpanel">
+          <!-- 骨架屏：视觉分析 Tab -->
+          <div class="skeleton-wrap skel-vision" id="skelVision" aria-hidden="true">
+            <div class="panel" style="margin-bottom:16px;">
+              <div class="skeleton skeleton-text" style="width:50%;margin-bottom:12px;"></div>
+              <div class="skeleton skeleton-img" style="aspect-ratio:1/1;max-width:500px;margin:0 auto;"></div>
+              <div class="skel-slider-bar">
+                <div class="skeleton skeleton-box" style="height:3px;width:100%;"></div>
+                <div class="skeleton skeleton-circle" style="width:24px;height:24px;margin-top:-13px;"></div>
+              </div>
+              <div class="skeleton skeleton-text" style="width:70%;margin-top:12px;"></div>
+              <div class="skeleton skeleton-box" style="width:100%;height:40px;margin-top:10px;"></div>
+            </div>
+          </div>
           <div class="panel" style="margin-bottom:16px;">
             <p class="panel-title">原图 vs AI 关注区域（拖动滑块对比）</p>
             <!-- 图像对比滑块 -->
@@ -506,7 +524,9 @@
               </div>
               <span class="comp-label left">原图</span>
               <span class="comp-label right">热力图</span>
-              <div class="comp-handle" id="compHandle" style="left:50%;">
+              <div class="comp-handle" id="compHandle" style="left:50%;"
+                   role="slider" aria-label="拖动对比原图与热力图"
+                   aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
                 <div class="comp-handle-knob" aria-hidden="true">⟺</div>
               </div>
             </div>
@@ -519,6 +539,32 @@
 
         <!-- Tab 3：详细报告（手风琴） -->
         <div class="report-tabpane" data-pane="detail" role="tabpanel">
+          <!-- 骨架屏：详细报告 Tab -->
+          <div class="skeleton-wrap skel-detail" id="skelDetail" aria-hidden="true">
+            <div class="skel-accordion-item">
+              <div class="skel-acc-head">
+                <div class="skeleton skeleton-text" style="width:30%;"></div>
+                <div class="skeleton skeleton-text" style="width:16px;flex:none;"></div>
+              </div>
+              <div class="skel-acc-body">
+                <div class="skeleton skeleton-text" style="width:100%;"></div>
+                <div class="skeleton skeleton-text" style="width:90%;"></div>
+                <div class="skeleton skeleton-text" style="width:75%;"></div>
+              </div>
+            </div>
+            <div class="skel-accordion-item">
+              <div class="skel-acc-head">
+                <div class="skeleton skeleton-text" style="width:30%;"></div>
+                <div class="skeleton skeleton-text" style="width:16px;flex:none;"></div>
+              </div>
+            </div>
+            <div class="skel-accordion-item">
+              <div class="skel-acc-head">
+                <div class="skeleton skeleton-text" style="width:30%;"></div>
+                <div class="skeleton skeleton-text" style="width:16px;flex:none;"></div>
+              </div>
+            </div>
+          </div>
           <div class="accordion is-open" data-acc="appearance">
             <div class="accordion-head">
               <span class="accordion-title">鱼眼外观评估</span>
@@ -560,6 +606,51 @@
 
         <!-- Tab 4：处理建议（手风琴） -->
         <div class="report-tabpane" data-pane="advice" role="tabpanel">
+          <!-- 骨架屏：处理建议 Tab -->
+          <div class="skeleton-wrap skel-advice" id="skelAdvice" aria-hidden="true">
+            <div class="skel-advice-grid">
+              <div class="skel-advice-card">
+                <div class="skel-adv-head">
+                  <div class="skeleton skeleton-circle" style="width:28px;height:28px;flex:none;"></div>
+                  <div class="skeleton skeleton-text" style="width:60%;"></div>
+                </div>
+                <div class="skeleton skeleton-text" style="width:100%;"></div>
+                <div class="skeleton skeleton-text" style="width:80%;"></div>
+              </div>
+              <div class="skel-advice-card">
+                <div class="skel-adv-head">
+                  <div class="skeleton skeleton-circle" style="width:28px;height:28px;flex:none;"></div>
+                  <div class="skeleton skeleton-text" style="width:60%;"></div>
+                </div>
+                <div class="skeleton skeleton-text" style="width:100%;"></div>
+                <div class="skeleton skeleton-text" style="width:80%;"></div>
+              </div>
+              <div class="skel-advice-card">
+                <div class="skel-adv-head">
+                  <div class="skeleton skeleton-circle" style="width:28px;height:28px;flex:none;"></div>
+                  <div class="skeleton skeleton-text" style="width:60%;"></div>
+                </div>
+                <div class="skeleton skeleton-text" style="width:100%;"></div>
+                <div class="skeleton skeleton-text" style="width:80%;"></div>
+              </div>
+              <div class="skel-advice-card">
+                <div class="skel-adv-head">
+                  <div class="skeleton skeleton-circle" style="width:28px;height:28px;flex:none;"></div>
+                  <div class="skeleton skeleton-text" style="width:60%;"></div>
+                </div>
+                <div class="skeleton skeleton-text" style="width:100%;"></div>
+                <div class="skeleton skeleton-text" style="width:80%;"></div>
+              </div>
+              <div class="skel-advice-card">
+                <div class="skel-adv-head">
+                  <div class="skeleton skeleton-circle" style="width:28px;height:28px;flex:none;"></div>
+                  <div class="skeleton skeleton-text" style="width:60%;"></div>
+                </div>
+                <div class="skeleton skeleton-text" style="width:100%;"></div>
+                <div class="skeleton skeleton-text" style="width:80%;"></div>
+              </div>
+            </div>
+          </div>
           <div class="advice-grid advice-grid-five" id="adviceGrid">
             <div class="advice-card advice-card-expandable" data-cat="storage">
               <div class="advice-head">
@@ -688,6 +779,7 @@
     let analysisInProgress = false;    // 是否正在分析中
     let lastAnalysisResult = null;     // 最近一次分析结果（JSON）
     let currentAbortController = null; // 当前请求的 AbortController（用于切换图片时取消）
+    let currentModelVersion = "v2";    // Session 24：当前选中的模型版本，默认 V2
 
     // ============ DOM 引用 ============
     const uploadZone = document.getElementById("uploadZone");
@@ -761,6 +853,20 @@
       const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
       const val = bytes / Math.pow(k, i);
       return `${val.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+    }
+
+    /**
+     * 简易 debounce：延迟 wait ms 后调用 fn，期间再次触发则重置计时
+     * @param {Function} fn
+     * @param {number} wait
+     * @returns {Function}
+     */
+    function debounce(fn, wait) {
+      let timer = null;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), wait);
+      };
     }
 
     /**
@@ -1209,7 +1315,72 @@
     }
 
     /**
-     * 设置按钮为加载态
+     * Hero 区瞳孔交互：跟随鼠标 + 置信度变色
+     */
+    (function setupPupilTracking() {
+      const pupil = document.getElementById('heroPupil');
+      const eyeWrap = document.querySelector('.hero-eye-wrap');
+      if (!pupil || !eyeWrap) return;
+
+      // 降级：用户偏好减少动画时不启用鼠标跟随
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      const MAX_OFFSET = 5;  // 瞳孔最大偏移 ±5px（SVG 坐标系单位）
+      let rafId = null;
+      let pendingTx = 0, pendingTy = 0;
+
+      document.addEventListener('mousemove', (e) => {
+        const rect = eyeWrap.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        // 鼠标相对中心的归一化偏移（-1 ~ 1）
+        const dx = (e.clientX - centerX) / (rect.width / 2);
+        const dy = (e.clientY - centerY) / (rect.height / 2);
+        // 限制在单位圆内，避免对角线偏移过大
+        const mag = Math.min(1, Math.hypot(dx, dy));
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = (dx / len) * mag;
+        const ny = (dy / len) * mag;
+        pendingTx = nx * MAX_OFFSET;
+        pendingTy = ny * MAX_OFFSET;
+        // requestAnimationFrame 节流，避免频繁移动卡顿
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          pupil.style.transform = `translate(${pendingTx}px, ${pendingTy}px)`;
+        });
+      });
+    })();
+
+    /**
+     * 根据置信度更新 Hero 瞳孔渐变颜色
+     * @param {number} confidence - 0~1 浮点数
+     */
+    function updatePupilColorByConfidence(confidence) {
+      const stop0 = document.getElementById('pupilStop0');
+      const stop1 = document.getElementById('pupilStop1');
+      if (!stop0 || !stop1) return;
+      const pct = (confidence || 0) * 100;
+      let color0, color1;
+      if (pct >= 80) {
+        // 绿色系（高置信度，新鲜）
+        color0 = '#1a6b5a';
+        color1 = '#0a3d2e';
+      } else if (pct >= 60) {
+        // 黄色系（中置信度）
+        color0 = '#7a5a1a';
+        color1 = '#3d2e0a';
+      } else {
+        // 红色系（低置信度，不新鲜）
+        color0 = '#7a1a1a';
+        color1 = '#3d0a0a';
+      }
+      stop0.setAttribute('stop-color', color0);
+      stop1.setAttribute('stop-color', color1);
+    }
+
+    /**
+     * 设置按钮为加载态（分析中）
      */
     function setAnalyzeLoading() {
       if (!analyzeBtn) return;
@@ -1217,6 +1388,8 @@
       analyzeBtn.classList.add("is-loading");
       analyzeBtn.disabled = true;
       analyzeBtnText.textContent = "分析中…";
+      // 检测开始：瞳孔初始红色系（未确定）
+      updatePupilColorByConfidence(0);
     }
 
     /**
@@ -1270,15 +1443,69 @@
     }
 
     // ---- 骨架屏 ----
+    // 4 个 Tab 各自专属骨架容器（概览沿用 #skeletonWrap，其余 3 个独立）
+    const skelWraps = [
+      document.getElementById("skeletonWrap"),
+      document.getElementById("skelVision"),
+      document.getElementById("skelDetail"),
+      document.getElementById("skelAdvice"),
+    ].filter(Boolean);
 
     function showLoading() {
-      skeletonWrap.classList.add("loading");
-      skeletonWrap.setAttribute("aria-hidden", "false");
+      skelWraps.forEach(el => {
+        el.classList.add("loading");
+        el.setAttribute("aria-hidden", "false");
+      });
     }
 
     function hideLoading() {
-      skeletonWrap.classList.remove("loading");
-      skeletonWrap.setAttribute("aria-hidden", "true");
+      skelWraps.forEach(el => {
+        el.classList.remove("loading");
+        el.setAttribute("aria-hidden", "true");
+      });
+    }
+
+    // ---- Session 24：模型版本选择器 ----
+
+    /**
+     * 初始化模型版本下拉框：切换时更新全局变量与按钮旁 Badge
+     */
+    function initModelSelector() {
+      const select = document.getElementById("modelVersionSelect");
+      if (!select) return;
+      select.addEventListener("change", (e) => {
+        currentModelVersion = e.target.value;
+        updateModelVersionBadge();
+        showToast(`已切换到模型 ${currentModelVersion.toUpperCase()}`, "info", 1800);
+      });
+      updateModelVersionBadge();
+    }
+
+    /**
+     * 在分析按钮旁显示当前模型版本 Badge
+     * V2 用主强调色（青绿），V1 用降饱和色（蓝灰）以示备选
+     * 离线模式下 Badge 仍显示，加 is-offline class 灰化
+     */
+    function updateModelVersionBadge() {
+      const actions = document.querySelector(".analyze-actions");
+      if (!actions) return;
+      let badge = document.getElementById("modelVersionBadge");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.id = "modelVersionBadge";
+        badge.className = "model-version-badge";
+        // 插入到 #analyzeBtn 之后（同行）
+        const btn = document.getElementById("analyzeBtn");
+        if (btn && btn.nextSibling) {
+          actions.insertBefore(badge, btn.nextSibling);
+        } else {
+          actions.appendChild(badge);
+        }
+      }
+      badge.textContent = currentModelVersion === "v2" ? "V2" : "V1";
+      badge.classList.toggle("is-v2", currentModelVersion === "v2");
+      badge.classList.toggle("is-v1", currentModelVersion === "v1");
+      badge.classList.toggle("is-offline", offlineMode === true);
     }
 
     // ---- 健康检查预热 ----
@@ -1395,11 +1622,12 @@
       const timeoutId = setTimeout(() => currentAbortController.abort(), API_TIMEOUT);
 
       try {
-        const res = await fetch(`${API_BASE_URL}/predict_with_gradcam`, {
+        const res = await fetch(`${API_BASE_URL}/predict_with_gradcam?model_version=${encodeURIComponent(currentModelVersion)}`, {
           method: "POST",
           body: formData,
           signal: currentAbortController.signal,
           // 不设置 Content-Type，让浏览器自动设置 multipart boundary
+          // model_version 是后端 Query 参数，拼在 URL 上而非 FormData
         });
         clearTimeout(timeoutId);
 
@@ -1478,6 +1706,9 @@
       offlineMode = true;
       apiAvailable = false;
       if (offlineBanner) offlineBanner.hidden = false;
+      // Session 24：模型选择器标注离线模式（下拉框仍可切换，仅作提示）
+      const offlineTag = document.getElementById("modelSelectorOffline");
+      if (offlineTag) offlineTag.hidden = false;
     }
 
     /**
@@ -1518,6 +1749,8 @@
             },
           ];
           const idx = Math.floor(Math.random() * 3);
+          // Session 24：模拟结果携带当前选中的 model_version，保持与后端响应结构一致
+          results[idx].model_version = currentModelVersion;
           resolve({ prediction: results[idx], heatmap_image: null, simulated: true });
         }, delay);
       });
@@ -1559,6 +1792,8 @@
 
       updateFreshnessCard(level, label, confidence, isSimulated);
       updateConfidenceGauge(confidence);
+      // 检测完成：瞳孔颜色随最终置信度变化
+      updatePupilColorByConfidence(confidence);
       updateProbabilityBars(probs, label);
       updateComparisonView(heatmapBase64);
       updateDescription(description, confidence);
@@ -1658,24 +1893,26 @@
       const retryBtn = document.getElementById("modalRetry");
       const viewBtn = document.getElementById("modalView");
 
+      // 统一关闭：隐藏弹窗并移除 keydown 监听器，避免重复绑定导致内存泄漏
+      const escHandler = (e) => {
+        if (e.key === "Escape") closeModal();
+      };
+      function closeModal() {
+        modal.hidden = true;
+        document.removeEventListener("keydown", escHandler);
+      }
+
       if (retryBtn) {
         retryBtn.onclick = () => {
-          modal.hidden = true;
+          closeModal();
           clearImage();
           const uploadZoneEl = document.getElementById("uploadZone");
           if (uploadZoneEl) uploadZoneEl.scrollIntoView({ behavior: "smooth" });
         };
       }
       if (viewBtn) {
-        viewBtn.onclick = () => { modal.hidden = true; };
+        viewBtn.onclick = () => { closeModal(); };
       }
-
-      const escHandler = (e) => {
-        if (e.key === "Escape") {
-          modal.hidden = true;
-          document.removeEventListener("keydown", escHandler);
-        }
-      };
       document.addEventListener("keydown", escHandler);
     }
 
@@ -1795,7 +2032,11 @@
     function setSliderPos(pct) {
       const p = Math.max(0, Math.min(100, pct));
       if (compOverlay) compOverlay.style.clipPath = `inset(0 ${100 - p}% 0 0)`;
-      if (compHandle) compHandle.style.left = `${p}%`;
+      if (compHandle) {
+        compHandle.style.left = `${p}%`;
+        // 同步 aria-valuenow（整数百分比，供屏幕阅读器播报）
+        compHandle.setAttribute("aria-valuenow", String(Math.round(p)));
+      }
     }
 
     /**
@@ -2065,29 +2306,56 @@
     }
 
     /**
-     * 格式化时间为本地可读字符串（北京时间 UTC+8）
+     * 格式化时间为相对时间（北京时间 UTC+8）
+     * <60s 刚刚 / <60min X分钟前 / <24h X小时前 / <48h 昨天 / <7d X天前 / ≥7d MM-DD HH:mm
      */
     const historyTimeFmt = new Intl.DateTimeFormat("zh-CN", {
-      month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+      month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
       timeZone: "Asia/Shanghai"
     });
+    function parseHistoryDate(iso) {
+      if (!iso) return null;
+      let str = String(iso);
+      // 若无时区标记（Z 或 +/-HH:MM），视为 UTC 时间补 Z 后缀，防止本地时区错误解析
+      if (!/[zZ]$/.test(str) && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+        str = str.replace(" ", "T") + "Z";
+      }
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? null : d;
+    }
     function formatHistoryTime(iso) {
       try {
-        if (!iso) return "—";
-        let str = String(iso);
-        // 若无时区标记（Z 或 +/-HH:MM），视为 UTC 时间补 Z 后缀，防止本地时区错误解析
-        if (!/[zZ]$/.test(str) && !/[+-]\d{2}:?\d{2}$/.test(str)) {
-          str = str.replace(" ", "T") + "Z";
-        }
-        const d = new Date(str);
-        if (isNaN(d.getTime())) return "—";
+        const d = parseHistoryDate(iso);
+        if (!d) return "—";
+        const now = Date.now();
+        const diffMs = now - d.getTime();
+        if (diffMs < 0) return "刚刚"; // 未来时间兜底
+        const sec = Math.floor(diffMs / 1000);
+        const min = Math.floor(sec / 60);
+        const hr = Math.floor(min / 60);
+        const day = Math.floor(hr / 24);
+        if (sec < 60) return "刚刚";
+        if (min < 60) return `${min}分钟前`;
+        if (hr < 24) return `${hr}小时前`;
+        if (day < 2) return "昨天";
+        if (day < 7) return `${day}天前`;
         return historyTimeFmt.format(d);
       } catch (_) { return "—"; }
+    }
+    /**
+     * 刷新所有历史记录项的相对时间显示
+     */
+    function refreshHistoryTimes() {
+      document.querySelectorAll(".history-time[data-timestamp]").forEach(el => {
+        el.textContent = formatHistoryTime(el.dataset.timestamp);
+      });
     }
 
     /**
      * Session 10：创建单条历史记录 DOM 元素（增量渲染用）
+     * 移动端左滑露出收藏/删除按钮，桌面端按钮始终可见
      */
+    let _swipeOpenItem = null; // 当前左滑展开的项引用
     function createHistoryItemElement(r, isFav) {
       const item = document.createElement("div");
       item.className = "history-item";
@@ -2095,20 +2363,113 @@
       const cls = r.freshnessLabel === 0 ? "high" : r.freshnessLabel === 1 ? "mid" : r.freshnessLabel === 2 ? "low" : "mid";
       const conf = ((r.confidenceScore || 0) * 100).toFixed(1);
       item.innerHTML = `
-        <img class="history-thumb" alt="缩略图" src="${r.thumbnail || ""}" width="56" height="56" loading="lazy" />
-        <div class="history-info">
-          <div class="history-row1">
-            <span class="history-badge ${cls}">${r.freshnessLevel}</span>
-            <span class="history-conf">${conf}%</span>
+        <div class="history-content">
+          <img class="history-thumb" alt="缩略图" src="${r.thumbnail || ""}" width="56" height="56" loading="lazy" />
+          <div class="history-info">
+            <div class="history-row1">
+              <span class="history-badge ${cls}">
+                <span class="history-badge-dot" aria-hidden="true"></span>
+                <span class="history-badge-icon" aria-hidden="true">🐟</span>
+                <span class="history-badge-text">${r.freshnessLevel}</span>
+              </span>
+              <span class="history-conf">${conf}%</span>
+            </div>
+            <div class="history-time" data-timestamp="${r.timestamp || ""}">${formatHistoryTime(r.timestamp)}</div>
           </div>
-          <div class="history-time">${formatHistoryTime(r.timestamp)}</div>
         </div>
         <div class="history-actions">
           <button class="history-btn fav ${isFav ? "is-fav" : ""}" aria-label="收藏" data-act="fav">${isFav ? "★" : "☆"}</button>
           <button class="history-btn del" aria-label="删除" data-act="del">🗑</button>
         </div>
       `;
+      // 移动端绑定左滑交互
+      _bindSwipeActions(item);
       return item;
+    }
+
+    /**
+     * 收起当前左滑展开的项
+     */
+    function _collapseSwipeItem() {
+      if (_swipeOpenItem) {
+        const content = _swipeOpenItem.querySelector(".history-content");
+        if (content) content.style.transform = "";
+        _swipeOpenItem = null;
+      }
+    }
+
+    /**
+     * 移动端左滑交互绑定（仅 max-width:768px 生效）
+     */
+    function _bindSwipeActions(item) {
+      const content = item.querySelector(".history-content");
+      const actions = item.querySelector(".history-actions");
+      if (!content || !actions) return;
+
+      let startX = 0, startY = 0, dragging = false, lockedDir = null, currentTranslate = 0;
+
+      item.addEventListener("touchstart", (e) => {
+        if (!window.matchMedia("(max-width: 768px)").matches) return;
+        // 若点击的是操作按钮，不触发左滑
+        if (e.target.closest(".history-btn")) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        dragging = true;
+        lockedDir = null;
+        // 读取当前偏移（已展开则为 -actionsWidth，否则 0）
+        currentTranslate = _swipeOpenItem === item ? -actions.offsetWidth : 0;
+      }, { passive: true });
+
+      item.addEventListener("touchmove", (e) => {
+        if (!dragging) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        // 首次移动锁定方向：水平位移占主导才判定为左滑，否则放行垂直滚动
+        if (lockedDir === null) {
+          if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+          lockedDir = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+        }
+        if (lockedDir === "y") return; // 垂直滚动放行
+        // 水平滑动：阻止默认行为（防止页面水平滚动）
+        e.preventDefault();
+        const raw = currentTranslate + dx;
+        const clamped = Math.max(-actions.offsetWidth, Math.min(0, raw));
+        content.style.transition = "none";
+        content.style.transform = `translateX(${clamped}px)`;
+      }, { passive: false });
+
+      item.addEventListener("touchend", () => {
+        if (!dragging || lockedDir !== "x") { dragging = false; return; }
+        dragging = false;
+        content.style.transition = "";
+        const matrix = new DOMMatrixReadOnly(getComputedStyle(content).transform);
+        const tx = matrix.m41;
+        const threshold = Math.min(40, actions.offsetWidth / 2);
+        if (tx < -threshold) {
+          // 固定露出操作按钮
+          content.style.transform = `translateX(${-actions.offsetWidth}px)`;
+          // 收起其他展开项
+          if (_swipeOpenItem && _swipeOpenItem !== item) {
+            const prev = _swipeOpenItem.querySelector(".history-content");
+            if (prev) prev.style.transform = "";
+          }
+          _swipeOpenItem = item;
+        } else {
+          // 回弹归位
+          content.style.transform = "";
+          if (_swipeOpenItem === item) _swipeOpenItem = null;
+        }
+      });
+
+      // 操作按钮点击后收起该项
+      actions.addEventListener("click", (e) => {
+        if (e.target.closest(".history-btn")) {
+          if (_swipeOpenItem === item) {
+            content.style.transform = "";
+            _swipeOpenItem = null;
+          }
+        }
+      }, true);
     }
 
     /**
@@ -2195,10 +2556,12 @@
           if (act === "fav") toggleFavorite(id);
           else if (act === "del") deleteHistory(id);
         } else {
+          // 点击其他历史项时，收起已展开的左滑项
+          if (_swipeOpenItem && _swipeOpenItem !== item) _collapseSwipeItem();
           loadHistoryToResults(id);
         }
       });
-      document.getElementById("historySearch")?.addEventListener("input", renderHistory);
+      document.getElementById("historySearch")?.addEventListener("input", debounce(renderHistory, 200));
       document.getElementById("historyFilter")?.addEventListener("change", renderHistory);
     }
 
@@ -2255,17 +2618,18 @@
 
     // ---- 新手引导 ----
     function initOnboarding() {
-      if (localStorage.getItem(ONBOARDING_KEY)) return;
+      // 复用 lsGet/lsSet，兼容隐私模式下 localStorage 不可用的情况
+      if (lsGet(ONBOARDING_KEY)) return;
       // 检查是否有历史记录
       if (loadHistory().length > 0) {
-        localStorage.setItem(ONBOARDING_KEY, "1");
+        lsSet(ONBOARDING_KEY, "1");
         return;
       }
       if (onboardingTip) {
         onboardingTip.hidden = false;
         const dismiss = () => {
           onboardingTip.hidden = true;
-          localStorage.setItem(ONBOARDING_KEY, "1");
+          lsSet(ONBOARDING_KEY, "1");
           document.removeEventListener("click", dismiss);
           clearTimeout(timer);
         };
@@ -2369,39 +2733,27 @@
           }
         });
       });
-      // 滑块：左右箭头微调位置
+      // 滑块：左右箭头微调位置（普通 ±1%，Shift ±10%）
       if (compHandle) {
         compHandle.setAttribute("tabindex", "0");
         compHandle.setAttribute("role", "slider");
-        compHandle.setAttribute("aria-label", "对比滑块");
+        compHandle.setAttribute("aria-label", "拖动对比原图与热力图");
+        compHandle.setAttribute("aria-valuemin", "0");
+        compHandle.setAttribute("aria-valuemax", "100");
+        compHandle.setAttribute("aria-valuenow", "50");
         compHandle.addEventListener("keydown", (e) => {
-          const cur = parseFloat(getComputedStyle(compHandle).left) || 50;
-          if (e.key === "ArrowLeft") { setSliderPos(cur - 5); e.preventDefault(); }
-          else if (e.key === "ArrowRight") { setSliderPos(cur + 5); e.preventDefault(); }
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault();
+          const cur = parseInt(compHandle.getAttribute("aria-valuenow") || "50", 10);
+          const step = e.shiftKey ? 10 : 1;
+          setSliderPos(e.key === "ArrowLeft" ? cur - step : cur + step);
         });
       }
     }
 
-    // ---- PWA：动态 manifest 注入 + Service Worker 探测 ----
+    // ---- PWA：manifest 已在 <head> 中通过 <link rel="manifest"> 静态引入 ----
+    // Service Worker 注册见文件末尾，此处无需重复注入 manifest（避免空 icons 覆盖真实 manifest）
     function initPWA() {
-      try {
-        const manifest = {
-          name: "Fish-Agent - 水产品新鲜度智能评估",
-          short_name: "Fish-Agent",
-          description: "AI 鱼眼新鲜度检测工具",
-          start_url: ".",
-          display: "standalone",
-          background_color: "#04162b",
-          theme_color: "#04162b",
-          orientation: "any",
-          icons: [],
-        };
-        const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
-        const link = document.createElement("link");
-        link.rel = "manifest";
-        link.href = URL.createObjectURL(blob);
-        document.head.appendChild(link);
-      } catch (_) { /* 静默忽略 */ }
       if ("serviceWorker" in navigator) {
         console.log("📦 PWA: Service Worker 支持已就绪");
       }
@@ -2415,6 +2767,8 @@
       initReveal();
       // Session 3：健康检查预热（不阻塞页面）
       checkApiHealth();
+      // Session 24：模型版本选择器初始化
+      initModelSelector();
       // 分析按钮点击
       if (analyzeBtn) {
         analyzeBtn.addEventListener("click", () => {
@@ -2427,6 +2781,11 @@
       initCompareSlider();
       initHistoryEvents();
       renderHistory();
+      // 相对时间每 60 秒刷新 + 页面重新可见时刷新
+      setInterval(refreshHistoryTimes, 60000);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refreshHistoryTimes();
+      });
       initOnboarding();
       initAdviceExpandable();
       exportJsonBtn?.addEventListener("click", exportJson);
@@ -2451,52 +2810,6 @@
           .then((reg) => console.log('📦 PWA: Service Worker 注册成功', reg.scope))
           .catch((err) => console.warn('📦 PWA: SW 注册失败', err));
       });
-    }
-
-    // ============ Session 10：全流程冒烟测试（开发调试用） ============
-    function fishAgentSmokeTest() {
-      console.log('🧪 Fish-Agent 冒烟测试开始');
-      const checks = [
-        { name: 'DOM 元素完整性', test: () =>
-          !!document.getElementById('uploadZone') &&
-          !!document.getElementById('analyzeBtn') &&
-          !!document.getElementById('resultsPanel')
-        },
-        { name: 'CSS 已加载', test: () => {
-          const s = getComputedStyle(document.body);
-          return s.backgroundColor !== 'rgba(0, 0, 0, 0)' || s.color !== '';
-        }},
-        { name: 'Service Worker 已注册', test: () =>
-          navigator.serviceWorker?.controller !== null || navigator.serviceWorker?.registration !== undefined
-        },
-        { name: 'localStorage 可用', test: () => {
-          try { localStorage.setItem('test', '1'); localStorage.removeItem('test'); return true; }
-          catch { return false; }
-        }},
-        { name: '置信度自适应函数存在', test: () =>
-          typeof handleConfidenceAdaptive === 'function'
-        },
-        { name: '离线模拟函数存在', test: () =>
-          typeof simulateAnalysis === 'function'
-        },
-        { name: '5 大类建议 DOM 存在', test: () =>
-          !!document.getElementById('adviceStorage') &&
-          !!document.getElementById('adviceHandling') &&
-          !!document.getElementById('adviceBest')
-        },
-        { name: '历史搜索过滤 DOM 存在', test: () =>
-          !!document.getElementById('historySearch') &&
-          !!document.getElementById('historyFilter')
-        },
-      ];
-      let passed = 0;
-      checks.forEach(c => {
-        const ok = c.test();
-        console.log(`${ok ? '✅' : '❌'} ${c.name}`);
-        if (ok) passed++;
-      });
-      console.log(`🧪 冒烟测试完成：${passed}/${checks.length} 通过`);
-      return passed === checks.length;
     }
   </script>
 </body>

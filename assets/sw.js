@@ -47,15 +47,20 @@ self.addEventListener('fetch', (event) => {
   }
 
   // HTML 导航请求：网络优先，确保用户获取到最新版本
-  if (event.request.mode === 'navigate') {
+  if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
+          // 按实际请求 URL 缓存，避免 about.html 被错存为 index.html
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(async () => {
+          // 离线：优先返回与请求匹配的已缓存页面，其次回退到 index.html（App Shell）
+          const cached = await caches.match(event.request);
+          return cached || caches.match('./index.html');
+        })
     );
     return;
   }
