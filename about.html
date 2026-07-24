@@ -1,32 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
-<meta name="theme-color" content="#04162b" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Fish-Agent" />
-<meta name="description" content="Fish-Agent 技术细节 — FishFreshNetV1 模型架构、LangGraph 16 节点工作流、MFED 数据集、Grad-CAM 可解释性、创作历程与社会价值。" />
-<meta name="robots" content="index, follow" />
-<meta name="keywords" content="FishFreshNetV1,EfficientNet-B0,CBAM,Grad-CAM,LangGraph,鱼眼新鲜度检测,深度学习,食品安全" />
-<meta name="author" content="祈雨柒" />
-<meta property="og:title" content="Fish-Agent · 技术细节与创作历程" />
-<meta property="og:description" content="FishFreshNetV1 模型架构、LangGraph 16 节点工作流、MFED 数据集、Grad-CAM 可解释性、创作历程与社会价值。" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://yance77777.github.io/Fish-Agent-Final/about.html" />
-<meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3C/svg%3E" />
-<meta name="twitter:card" content="summary" />
-<link rel="canonical" href="https://yance77777.github.io/Fish-Agent-Final/about.html" />
-<title>Fish-Agent · 技术细节与创作历程</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" media="print" onload="this.media='all'" />
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" /></noscript>
-<link rel="stylesheet" href="assets/style.css">
-<link rel="manifest" href="./assets/manifest.json">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="theme-color" content="#04162b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fish-Agent" />
+  <meta name="description" content="Fish-Agent 技术细节 — FishFreshNetV1/V2 模型架构、LangGraph 16 节点工作流、MFED 数据集、Grad-CAM 可解释性、创作历程与社会价值。" />
+  <meta name="robots" content="index, follow" />
+  <meta name="keywords" content="FishFreshNetV1,FishFreshNetV2,EfficientNet-B0,CBAM,ECA,Light CRA,Grad-CAM,LangGraph,鱼眼新鲜度检测,深度学习,食品安全" />
+  <meta name="author" content="祈雨柒" />
+  <meta property="og:title" content="Fish-Agent · 技术细节与创作历程" />
+  <meta property="og:description" content="FishFreshNetV1/V2 模型架构、LangGraph 16 节点工作流、MFED 数据集、Grad-CAM 可解释性、创作历程与社会价值。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://yance77777.github.io/Fish-Agent/about.html" />
+  <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%2304162b'/%3E%3Ccircle cx='600' cy='270' r='130' fill='none' stroke='%2327d0c4' stroke-width='8'/%3E%3Ccircle cx='600' cy='270' r='85' fill='%2327d0c4'/%3E%3Ccircle cx='600' cy='270' r='48' fill='%2304162b'/%3E%3Ccircle cx='578' cy='248' r='18' fill='%23ffffff' opacity='0.7'/%3E%3Ctext x='600' y='490' font-family='system-ui,-apple-system,sans-serif' font-size='68' font-weight='800' fill='%23ffffff' text-anchor='middle'%3EFish-Agent%3C/text%3E%3C/svg%3E" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Fish-Agent · 技术细节与创作历程" />
+  <meta name="twitter:description" content="FishFreshNetV1/V2 模型架构、LangGraph 16 节点工作流、Grad-CAM 可解释性。" />
+  <meta name="twitter:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%2304162b'/%3E%3Ccircle cx='600' cy='270' r='130' fill='none' stroke='%2327d0c4' stroke-width='8'/%3E%3Ccircle cx='600' cy='270' r='85' fill='%2327d0c4'/%3E%3Ccircle cx='600' cy='270' r='48' fill='%2304162b'/%3E%3Ccircle cx='578' cy='248' r='18' fill='%23ffffff' opacity='0.7'/%3E%3Ctext x='600' y='490' font-family='system-ui,-apple-system,sans-serif' font-size='68' font-weight='800' fill='%23ffffff' text-anchor='middle'%3EFish-Agent%3C/text%3E%3C/svg%3E" />
+  <link rel="canonical" href="https://yance77777.github.io/Fish-Agent/about.html" />
+  <title>Fish-Agent · 技术细节与创作历程</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304162b'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2327d0c4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%2327d0c4'/%3E%3Ccircle cx='28' cy='28' r='4' fill='%23ffffff' opacity='0.8'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&display=swap" /></noscript>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="manifest" href="./assets/manifest.json">
 </head>
 <body>
   <a href="#architecture" class="skip-link">跳到主内容</a>
@@ -73,6 +76,10 @@
 
   <main id="architecture">
 
+    <div class="section-head" style="text-align:center; margin-bottom:var(--space-8);">
+      <h1 class="section-title" style="font-family:'Orbitron',sans-serif; font-size:clamp(32px,5vw,48px); margin-bottom:8px;">技术细节与创作历程</h1>
+    </div>
+
     <!-- ============ 技术架构图 ============ -->
     <section class="reveal" style="margin-bottom: var(--space-8);">
       <div class="section-head">
@@ -106,7 +113,7 @@
           <div class="arch-layer-title">HF Spaces 后端（FastAPI + PyTorch）</div>
           <div class="arch-boxes">
             <div class="arch-box arch-box-wide">
-              <span>FishFreshNetV1 推理 → 三类概率分布 + Grad-CAM</span>
+              <span>FishFreshNetV1/V2 推理 → 三类概率分布 + Grad-CAM</span>
             </div>
           </div>
           <div class="arch-branches">
@@ -143,7 +150,7 @@
           </div>
           <ul class="pain-list">
             <li>鱼眼照片一键上传，<strong>零成本非破坏式</strong>检测</li>
-            <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong></li>
+            <li>FishFreshNetV1（EfficientNet-B0 + CBAM）三分类，准确率 <strong>99.23%</strong>；V2（EfficientNet-B0 + ECA + Light CRA）提升至 <strong>99.29%</strong></li>
             <li>Grad-CAM 热力图解释"为什么"，结构化报告给出"怎么办"</li>
             <li>置信度驱动自适应分支，低置信度主动提示重拍</li>
           </ul>
@@ -159,17 +166,17 @@
       <div class="users-grid">
         <div class="user-card">
           <div class="user-icon" aria-hidden="true">🛒</div>
-          <h4 class="user-title">消费者</h4>
+          <h3 class="user-title">消费者</h3>
           <p class="user-text">菜市场 / 超市买鱼时拍照即知新鲜度，告别"凭手感挑鱼"的盲选。</p>
         </div>
         <div class="user-card">
           <div class="user-icon" aria-hidden="true">🐟</div>
-          <h4 class="user-title">商贩与采购</h4>
+          <h3 class="user-title">商贩与采购</h3>
           <p class="user-text">批量进货验收，一键导出 CSV 汇总，留档对账，降低退货纠纷。</p>
         </div>
         <div class="user-card">
           <div class="user-icon" aria-hidden="true">📋</div>
-          <h4 class="user-title">质检监管</h4>
+          <h3 class="user-title">质检监管</h3>
           <p class="user-text">生成 PDF 报告存档，含结论、置信度、建议与时间戳，全程可追溯。</p>
         </div>
       </div>
@@ -230,6 +237,13 @@
                 <td class="highlight">0.41</td>
                 <td class="highlight">99.23%</td>
                 <td class="highlight">81.78%</td>
+              </tr>
+              <tr class="compare-table-highlight">
+                <td class="highlight">FishFreshNetV2（本作品）</td>
+                <td class="highlight">4.095</td>
+                <td class="highlight">0.414</td>
+                <td class="highlight">99.29%</td>
+                <td class="highlight">81.18%</td>
               </tr>
             </tbody>
           </table>
@@ -356,6 +370,133 @@
             <span class="model-stat-num">3.1%</span>
             <span class="model-stat-label">VGG16 参数占比</span>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FishFreshNetV2 模型架构详解 ============ -->
+    <section id="model-v2" class="reveal">
+      <div class="section-head">
+        <h2 class="section-title">FishFreshNetV2 模型架构</h2>
+      </div>
+      <p class="intro-sub">FishFreshNetV2 是在 V1 基础上完成的学术升级版本，论文标题为《FishFreshNetV2: Lightweight and Interpretable Fish Freshness Assessment from Eye Images》。V2 的核心目标是在保持轻量化的前提下进一步提升精度与可解释性，关键改动有两点：用 <strong>ECA</strong> 替代 CBAM 作为通道注意力，并新增 <strong>Light CRA</strong>（Light Circular Region Attention）鱼眼专用区域注意力。模型仅 <strong>4.095M</strong> 参数、<strong>0.414G</strong> FLOPs，在 MFED 数据集上达到 <strong>99.29%</strong> 准确率。</p>
+
+      <!-- 模型前向流程图 -->
+      <div class="model-flow">
+        <div class="model-flow-step">
+          <span class="model-flow-label">输入图像<br/><small>3×224×224</small></span>
+        </div>
+        <div class="model-flow-arrow" aria-hidden="true">→</div>
+        <div class="model-flow-step">
+          <span class="model-flow-label">EfficientNet-B0<br/><small>特征提取骨干</small></span>
+        </div>
+        <div class="model-flow-arrow" aria-hidden="true">→</div>
+        <div class="model-flow-step model-flow-step-highlight">
+          <span class="model-flow-label">ECA<br/><small>通道注意力（零参数）</small></span>
+        </div>
+        <div class="model-flow-arrow" aria-hidden="true">→</div>
+        <div class="model-flow-step model-flow-step-highlight">
+          <span class="model-flow-label">Light CRA<br/><small>环形区域注意力</small></span>
+        </div>
+        <div class="model-flow-arrow" aria-hidden="true">→</div>
+        <div class="model-flow-step">
+          <span class="model-flow-label">分类头<br/><small>GAP→Dropout→FC</small></span>
+        </div>
+        <div class="model-flow-arrow" aria-hidden="true">→</div>
+        <div class="model-flow-step">
+          <span class="model-flow-label">Grad-CAM<br/><small>可解释热力图</small></span>
+        </div>
+      </div>
+
+      <!-- ECA 技术创新点 -->
+      <div class="model-card">
+        <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">⚡</span> ECA 通道注意力（替代 CBAM）</h3>
+        <p>V1 使用的 <strong>CBAM</strong> 同时引入通道注意力子模块（共享 MLP）和空间注意力子模块（卷积层），会带来额外的参数开销。V2 改用 <strong>ECA-Net（Efficient Channel Attention）<sup>[9]</sup></strong>提出的高效通道注意力，核心思想是：<strong>用一维卷积替代全连接 MLP，让相邻通道直接交互，避免降维带来的信息损失</strong>。</p>
+        <div class="model-features">
+          <div class="model-feature">
+            <strong>零额外参数</strong>：ECA 仅一个一维卷积核（k 个权重），不引入任何通道降维参数。核大小 k 由通道数 C 自适应决定：<code>k = 2 × ⌊log₂(C) / 2 + 0.5⌋ - 1</code>，最小取 3。
+          </div>
+          <div class="model-feature">
+            <strong>局部跨通道交互</strong>：与 CBAM 的全局 MLP 全连接不同，ECA 通过一维卷积实现局部邻域的通道交互，更高效地捕获通道间依赖关系。
+          </div>
+          <div class="model-feature">
+            <strong>与 Light CRA 分工互补</strong>：ECA 负责轻量通道调制，Light CRA 负责区域注意力，两者分工互补，无需 CBAM 的空间注意力子模块。
+          </div>
+        </div>
+      </div>
+
+      <!-- Light CRA 鱼眼专用区域注意力 -->
+      <div class="model-card">
+        <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">🎯</span> Light CRA 环形区域注意力</h3>
+        <p>这是 V2 引入的<strong>原创模块</strong>，利用鱼眼近似圆形的几何先验，将特征图划分为 N=3 个同心环（瞳孔 / 角膜 / 眼眶）并分别施加注意力。原始 CRA 参数高达 13.846M，Light CRA 通过"掩码分区 + 共享深度卷积"压缩到仅 <strong>0.083M</strong>，却带来 +0.37% 准确率提升（98.88% → 99.25%）。</p>
+        <div class="model-features">
+          <div class="model-feature">
+            <strong>三环语义结构</strong>：N=3 对应鱼眼的三段语义结构——内环（瞳孔）、中环（角膜）、外环（眼眶），每个环独立生成注意力权重，使模型聚焦于不同半径区域的新鲜度特征。
+          </div>
+          <div class="model-feature">
+            <strong>轻量化设计</strong>：通过预生成的环形掩码分区特征图，共享一个深度卷积核处理所有环，将参数量从原始 CRA 的 13.846M 压缩至 0.083M（压缩率 99.4%）。
+          </div>
+          <div class="model-feature">
+            <strong>环形数量消融验证</strong>：消融实验证实 N=3 最优——N=1 退化 为全局注意力（无区域先验），N=5 划分过细导致语义碎片化，N=3 与鱼眼三段结构完美对应。
+          </div>
+        </div>
+      </div>
+
+      <!-- V1 vs V2 性能对比表 -->
+      <div class="model-card">
+        <h3 class="model-h3"><span class="model-h3-icon" aria-hidden="true">📊</span> V1 vs V2 性能对比</h3>
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>模型</th>
+                <th>准确率 (%)</th>
+                <th>F1 (%)</th>
+                <th>参数 (M)</th>
+                <th>FLOPs (G)</th>
+                <th>模型大小 (MB)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FishFreshNetV1（基线）</td>
+                <td>98.88</td>
+                <td>98.88</td>
+                <td>4.216</td>
+                <td>0.414</td>
+                <td>16.08</td>
+              </tr>
+              <tr class="highlight">
+                <td><strong>FishFreshNetV2</strong></td>
+                <td><strong>99.29</strong></td>
+                <td><strong>99.29</strong></td>
+                <td><strong>4.095</strong></td>
+                <td><strong>0.414</strong></td>
+                <td><strong>15.62</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="margin-top: 12px; font-size: 14px; color: var(--muted);">V2 相对 V1 的关键提升：准确率 +0.41%（98.88% → 99.29%），参数量 -0.121M（4.216M → 4.095M），模型大小 -0.46MB——在精度提升的同时实现了参数量与模型体积的双下降。</p>
+      </div>
+
+      <!-- 关键数据 -->
+      <div class="model-stats">
+        <div class="model-stat-item">
+          <span class="model-stat-num">4.095M</span>
+          <span class="model-stat-label">参数量</span>
+        </div>
+        <div class="model-stat-item">
+          <span class="model-stat-num">0.414G</span>
+          <span class="model-stat-label">FLOPs</span>
+        </div>
+        <div class="model-stat-item">
+          <span class="model-stat-num">99.29%</span>
+          <span class="model-stat-label">MFED 准确率</span>
+        </div>
+        <div class="model-stat-item">
+          <span class="model-stat-num">0.083M</span>
+          <span class="model-stat-label">Light CRA 参数</span>
         </div>
       </div>
     </section>
@@ -520,35 +661,35 @@
           <div class="timeline-item">
             <div class="timeline-dot dot-gold" aria-hidden="true">💡</div>
             <div class="timeline-content">
-              <h4>灵感诞生</h4>
-              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是反映新鲜度最关键的视觉信号</strong><sup>[9]</sup>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
+              <h3>灵感诞生</h3>
+              <p>陪家人去菜市场买鱼，摊主信誓旦旦"绝对新鲜"，回家切开却已发臭。发现<strong>鱼眼是反映新鲜度最关键的视觉信号</strong><sup>[10]</sup>，但人眼无法分辨细微差距——如果 AI 能看懂鱼眼呢？</p>
             </div>
           </div>
           <div class="timeline-item">
             <div class="timeline-dot dot-aqua" aria-hidden="true">🔬</div>
             <div class="timeline-content">
-              <h4>独立研究</h4>
-              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework Based on Attention Mechanism for Fish Freshness Assessment》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标<sup>[10]</sup>），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
+              <h3>独立研究</h3>
+              <p>撰写论文《FishFreshNetV1: A Lightweight and Explainable Framework Based on Attention Mechanism for Fish Freshness Assessment》，提出 <strong>EfficientNet-B0 + CBAM</strong> 架构。构建 MFED 数据集（4800 张 / 4 环境 / GB 2733-2015 国标<sup>[11]</sup>），达成 <strong>99.23% 准确率</strong>。数据集开源至 Mendeley Data。</p>
             </div>
           </div>
           <div class="timeline-item">
             <div class="timeline-dot dot-blue" aria-hidden="true">⚙️</div>
             <div class="timeline-content">
-              <h4>后端开发</h4>
+              <h3>后端开发</h3>
               <p>FastAPI + PyTorch 模型推理服务，部署至 Hugging Face Spaces。<strong>LangGraph 16 节点智能体工作流</strong>，置信度自适应分支 + 多模态 LLM 兜底，确保每一次检测都有可靠结果。</p>
             </div>
           </div>
           <div class="timeline-item">
             <div class="timeline-dot dot-purple" aria-hidden="true">🎨</div>
             <div class="timeline-content">
-              <h4>前端开发（初赛）</h4>
+              <h3>前端开发（初赛）</h3>
               <p>TRAE Work 5 次对话从零到交付。项目奠基 → 视觉升级 → API 集成 → 结果深化 → 打磨交付。单文件 HTML <strong>149KB</strong>，深海动态主题 + 4-Tab 分析报告 + 离线演示模式。</p>
             </div>
           </div>
           <div class="timeline-item">
             <div class="timeline-dot dot-green" aria-hidden="true">🚀</div>
             <div class="timeline-content">
-              <h4>复赛迭代</h4>
+              <h3>复赛迭代</h3>
               <p>多页面重构 → 移动端深度适配 + PWA → 16 节点工作流融合 → <strong>置信度自适应前端机制</strong> → 最终交付打磨。从"能用的 Demo"进化为"好用的产品"。</p>
             </div>
           </div>
@@ -557,7 +698,7 @@
     </section>
     <!--
     演示视频脚本（1-5 分钟录屏参考）：
-    1. 打开 https://yance77777.github.io/Fish-Agent-Final/（0:00-0:10）
+    1. 打开 https://yance77777.github.io/Fish-Agent/（0:00-0:10）
     2. 点击上传区，选择一张高度新鲜鱼眼照片（0:10-0:20）
     3. 点击"开始分析"，展示扫描动画（0:20-0:30）
     4. 分析完成，展示 4-Tab 报告：概览 → AI视觉分析 → 详细报告 → 处理建议（0:30-1:15）
@@ -580,32 +721,32 @@
         <div class="social-grid">
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">👥</div>
-            <h4>受众规模</h4>
+            <h3>受众规模</h3>
             <p>据农业农村部《2023 年全国渔业经济统计公报》，全国水产品总产量 <strong>7116.17 万吨</strong>，产业链覆盖千万级从业者与 <strong>3 亿+</strong> 消费者，社会需求面极广。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🛡️</div>
-            <h4>填平经验壁垒</h4>
-            <p>让第一次买鱼的高中生也能拥有<strong>老师傅级别的判别力</strong>，用技术填平"经验鸿沟"<sup>[11]</sup>。</p>
+            <h3>填平经验壁垒</h3>
+            <p>让第一次买鱼的高中生也能拥有<strong>老师傅级别的判别力</strong>，用技术填平"经验鸿沟"<sup>[12]</sup>。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🏥</div>
-            <h4>降低食安事故</h4>
+            <h3>降低食安事故</h3>
             <p>低成本视觉检测在<strong>"最后一公里"拦截问题产品</strong>，事前识别胜过事后追溯。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🏝️</div>
-            <h4>助力边远地区</h4>
+            <h3>助力边远地区</h3>
             <p>一部手机 + 浏览器即可获得<strong>一线城市专业检测机构级别</strong>的初步判别能力。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">⚖️</div>
-            <h4>促进市场公平</h4>
+            <h3>促进市场公平</h3>
             <p>消费者拥有独立判别能力，从机制上<strong>减少"以次充好"的生存空间</strong>。</p>
           </div>
           <div class="social-card">
             <div class="social-icon" aria-hidden="true">🔄</div>
-            <h4>可复制性</h4>
+            <h3>可复制性</h3>
             <p>技术栈轻量（CPU 推理），部署标准化（一天内即可自建），<strong>场景可迁移</strong>（肉类/果蔬/海鲜）。</p>
           </div>
         </div>
@@ -620,7 +761,7 @@
       <div id="iterContent">
         <div class="iter-grid">
           <div class="iter-phase">
-            <h4>短期（1–3 个月）</h4>
+            <h3>短期（1–3 个月）</h3>
             <ul>
               <li><strong>MC Dropout 推理置信度量化</strong>（论文未来工作）</li>
               <li>受控混淆因子训练（防背景反光干扰）</li>
@@ -629,7 +770,7 @@
             </ul>
           </div>
           <div class="iter-phase">
-            <h4>中期（3–12 个月）</h4>
+            <h3>中期（3–12 个月）</h3>
             <ul>
               <li><strong>品种细分</strong>（鱼种识别 + 新鲜度 + 烹饪建议三合一）</li>
               <li>监管对接（农贸市场 SaaS 版）</li>
@@ -638,7 +779,7 @@
             </ul>
           </div>
           <div class="iter-phase">
-            <h4>长期（1 年以上）</h4>
+            <h3>长期（1 年以上）</h3>
             <ul>
               <li><strong>实时场景验证</strong>（论文局限性突破）</li>
               <li>B 端 SaaS 平台</li>
@@ -664,6 +805,7 @@
         <li>Tan, M., &amp; Le, Q. V. (2019). <em>EfficientNet: Rethinking model scaling for convolutional neural networks</em>. Proceedings of the 36th International Conference on Machine Learning (ICML), PMLR 97, 6105-6114.</li>
         <li>Woo, S., Park, J., Lee, J.-Y., &amp; Kweon, I. S. (2018). <em>CBAM: Convolutional block attention module</em>. Proceedings of the European Conference on Computer Vision (ECCV), 3-19.</li>
         <li>Selvaraju, R. R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., &amp; Batra, D. (2017). <em>Grad-CAM: Visual explanations from deep networks via gradient-based localization</em>. Proceedings of the IEEE International Conference on Computer Vision (ICCV), 618-626. https://doi.org/10.1109/ICCV.2017.74</li>
+        <li>Wang, Q., Wu, B., Zhu, P., Li, P., Zuo, W., &amp; Hu, Q. (2020). <em>ECA-Net: Efficient channel attention for deep convolutional neural networks</em>. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 11534-11542. https://doi.org/10.1109/CVPR42600.2020.01155</li>
         <li>Lalabadi, H. M., Sadeghi, M., &amp; Mireei, S. A. (2020). <em>Fish freshness categorization from eyes and gills color features using multi-class artificial neural network and support vector machines</em>. Aquacultural Engineering, 90, 102076. https://doi.org/10.1016/j.aquaeng.2020.102076</li>
         <li>国家卫生和计划生育委员会 (2015). <em>GB 2733-2015 食品安全国家标准 鲜、冻动物性水产品</em>. 中国标准出版社.</li>
         <li>Madhubhashini, M. N., Liyanage, C. P., Alahakoon, A. U., et al. (2024). <em>Current applications and future trends of artificial senses in fish freshness determination: A review</em>. Journal of Food Science, 89(1), 33-50.</li>
